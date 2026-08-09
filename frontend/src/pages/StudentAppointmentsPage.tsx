@@ -12,13 +12,15 @@ import {
   IconClose,
   IconAlert,
   IconFileText,
+  IconArrowRight,
 } from '../components/Icons';
 
 export function StudentAppointmentsPage() {
   const [items, setItems] = useState<AppointmentResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState<number | null>(null);
-  const [cancellingItem, setCancellingItem] = useState<AppointmentResponseDto | null>(null);
+  const [detailLoadingId, setDetailLoadingId] = useState<number | null>(null);
+  const [selectedItem, setSelectedItem] = useState<AppointmentResponseDto | null>(null);
+  const [cancelBusyId, setCancelBusyId] = useState<number | null>(null);
   const [reason, setReason] = useState('Em bận đột xuất lịch học trên lớp.');
 
   const load = async () => {
@@ -34,17 +36,32 @@ export function StudentAppointmentsPage() {
     load();
   }, []);
 
-  const handleCancelSubmit = async () => {
-    if (!cancellingItem) return;
-    setBusyId(cancellingItem.appointmentId);
+  const canCancel = (status: string) => ['Pending', 'Confirmed'].includes(status);
+
+  const openDetail = async (item: AppointmentResponseDto) => {
+    setDetailLoadingId(item.appointmentId);
     try {
-      await api.cancelAppointment(cancellingItem.appointmentId, { cancellationReason: reason });
-      setCancellingItem(null);
+      const detail = await api.appointmentsById(item.appointmentId);
+      setSelectedItem(detail);
+      setReason('Em bận đột xuất lịch học trên lớp.');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Không thể tải chi tiết lịch hẹn.');
+    } finally {
+      setDetailLoadingId(null);
+    }
+  };
+
+  const handleCancelSubmit = async () => {
+    if (!selectedItem) return;
+    setCancelBusyId(selectedItem.appointmentId);
+    try {
+      await api.cancelAppointment(selectedItem.appointmentId, { cancellationReason: reason });
+      setSelectedItem(null);
       await load();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể hủy lịch hẹn.');
     } finally {
-      setBusyId(null);
+      setCancelBusyId(null);
     }
   };
 
@@ -111,20 +128,30 @@ export function StudentAppointmentsPage() {
               </div>
             ) : null}
 
-            {item.status === 'Pending' ? (
-              <div style={{ paddingTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ paddingTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                onClick={() => void openDetail(item)}
+                disabled={detailLoadingId === item.appointmentId}
+              >
+                <IconArrowRight size={15} />
+                <span>{detailLoadingId === item.appointmentId ? 'Đang mở...' : 'Xem Chi Tiết'}</span>
+              </button>
+              {canCancel(item.status) ? (
                 <button
                   type="button"
                   className="btn btn-danger"
                   style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                  onClick={() => setCancellingItem(item)}
-                  disabled={busyId === item.appointmentId}
+                  onClick={() => setSelectedItem(item)}
+                  disabled={cancelBusyId === item.appointmentId}
                 >
                   <IconClose size={15} />
-                  <span>Hủy Lịch Hẹn Này</span>
+                  <span>Hủy Lịch Hẹn</span>
                 </button>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
         ))}
 
@@ -135,35 +162,56 @@ export function StudentAppointmentsPage() {
         )}
       </div>
 
-      {/* Cancel Appointment Modal Overlay */}
-      {cancellingItem && (
+      {/* Detail / Cancel Modal Overlay */}
+      {selectedItem && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <IconAlert size={20} style={{ color: 'var(--danger)' }} />
-              <span>Hủy Lịch Hẹn Tư Vấn</span>
+              <IconFileText size={20} style={{ color: 'var(--accent)' }} />
+              <span>Chi Tiết Lịch Hẹn</span>
             </h2>
-            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-              Bạn đang yêu cầu hủy lịch hẹn <strong>"{cancellingItem.topic}"</strong> với {cancellingItem.lecturerName}.
-            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{selectedItem.topic}</div>
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+                  Giảng viên: <strong>{selectedItem.lecturerName}</strong> ({selectedItem.department || 'Khoa CNTT'})
+                </div>
+              </div>
 
-            <label className="field" style={{ marginBottom: 20 }}>
-              <span>Lý do hủy lịch:</span>
-              <textarea
-                rows={3}
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                placeholder="Nhập lý do hủy lịch..."
-              />
-            </label>
+              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'grid', gap: 10 }}>
+                <div><strong>Thời gian:</strong> {formatDateTime(selectedItem.startTime)} - {formatDateTime(selectedItem.endTime)}</div>
+                <div><strong>Hình thức:</strong> {selectedItem.meetingType} {selectedItem.locationOrLink ? `(${selectedItem.locationOrLink})` : ''}</div>
+                <div><strong>Trạng thái:</strong> <StatusBadge value={selectedItem.status} /></div>
+                {selectedItem.description ? <div><strong>Ghi chú:</strong> {selectedItem.description}</div> : null}
+                {selectedItem.lecturerResponse ? <div><strong>Phản hồi giảng viên:</strong> {selectedItem.lecturerResponse}</div> : null}
+                {selectedItem.cancellationReason ? <div><strong>Lý do hủy:</strong> {selectedItem.cancellationReason}</div> : null}
+              </div>
 
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-secondary" onClick={() => setCancellingItem(null)}>
-                Quay Lại
-              </button>
-              <button type="button" className="btn btn-danger" onClick={handleCancelSubmit} disabled={busyId === cancellingItem.appointmentId}>
-                {busyId === cancellingItem.appointmentId ? 'Đang Hủy...' : 'Xác Nhận Hủy'}
-              </button>
+              {canCancel(selectedItem.status) ? (
+                <>
+                  <div style={{ height: 1, background: 'var(--border-subtle)' }} />
+                  <label className="field">
+                    <span>Lý do hủy lịch:</span>
+                    <textarea
+                      rows={3}
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder="Nhập lý do hủy lịch..."
+                    />
+                  </label>
+                </>
+              ) : null}
+
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setSelectedItem(null)}>
+                  Đóng
+                </button>
+                {canCancel(selectedItem.status) ? (
+                  <button type="button" className="btn btn-danger" onClick={handleCancelSubmit} disabled={cancelBusyId === selectedItem.appointmentId}>
+                    {cancelBusyId === selectedItem.appointmentId ? 'Đang Hủy...' : 'Xác Nhận Hủy'}
+                  </button>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
