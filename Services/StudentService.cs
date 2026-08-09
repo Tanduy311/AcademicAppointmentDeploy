@@ -69,31 +69,6 @@ namespace AcademicAppoinment.Services
             return ToDetailDto(await _repository.GetStudentByIdWithDetailsAsync(student.StudentId) ?? student);
         }
 
-        public async Task<StudentDetailDto> UpdateMyProfileAsync(UpdateStudentProfileDto dto, ClaimsPrincipal user)
-        {
-            var currentUserId = GetCurrentUserId(user);
-            var student = await _repository.GetStudentWithUserByUserIdAsync(currentUserId);
-            if (student == null)
-            {
-                throw new KeyNotFoundException("Không tìm thấy thông tin sinh viên.");
-            }
-
-            if (student.User != null)
-            {
-                student.User.FullName = dto.FullName;
-                student.User.PhoneNumber = dto.PhoneNumber;
-            }
-
-            student.Major = dto.Major;
-            student.ClassName = dto.ClassName;
-            student.AcademicYear = dto.AcademicYear;
-
-            await _repository.SaveChangesAsync();
-
-            var updatedStudent = await _repository.GetStudentByIdWithDetailsAsync(student.StudentId);
-            return ToDetailDto(updatedStudent ?? student);
-        }
-
         private static StudentDetailDto ToDetailDto(Student student)
         {
             return new StudentDetailDto

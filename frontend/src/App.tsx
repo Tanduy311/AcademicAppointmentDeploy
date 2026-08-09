@@ -14,7 +14,6 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { RegisterLecturerPage } from './pages/RegisterLecturerPage';
 import { RegisterStudentPage } from './pages/RegisterStudentPage';
 import { LecturerSlotsPage } from './pages/LecturerSlotsPage';
-import { LecturerProfilePage } from './pages/LecturerProfilePage';
 import { StudentAppointmentsPage } from './pages/StudentAppointmentsPage';
 import { StudentProfilePage } from './pages/StudentProfilePage';
 
@@ -49,7 +48,6 @@ export function App() {
           <Route element={<ProtectedRoute roles={['Lecturer']} />}>
             <Route path="lecturer-appointments" element={<LecturerAppointmentsPage />} />
             <Route path="slots" element={<LecturerSlotsPage />} />
-            <Route path="lecturer-profile" element={<LecturerProfilePage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={['Admin']} />}>

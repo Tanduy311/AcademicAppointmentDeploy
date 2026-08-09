@@ -5,7 +5,6 @@ import type {
   AppointmentResponseDto,
   AuthResponseDto,
   CancelAppointmentDto,
-  ChangePasswordDto,
   CreateAppointmentDto,
   CreateSlotDto,
   CurrentUserResponseDto,
@@ -15,16 +14,11 @@ import type {
   NotificationResponseDto,
   RegisterLecturerDto,
   RegisterStudentDto,
-  RescheduleAppointmentDto,
   RoleDto,
   SlotResponseDto,
   StudentDetailDto,
   StudentListItemDto,
-  UpdateAppointmentDto,
   UpdateAppointmentStatusDto,
-  UpdateLecturerProfileDto,
-  UpdateSlotDto,
-  UpdateStudentProfileDto,
   UpdateUserRoleDto,
   UpdateUserStatusDto,
 } from '../types/api';
@@ -46,21 +40,10 @@ export const api = {
       body: JSON.stringify(dto),
     }),
   me: () => request<CurrentUserResponseDto>('/api/auth/me'),
-  changePassword: (dto: ChangePasswordDto) =>
-    request<{ message: string }>('/api/auth/change-password', {
-      method: 'POST',
-      body: JSON.stringify(dto),
-    }),
 
   lecturers: () => request<LecturerListItemDto[]>('/api/lecturers'),
   lecturerById: (lecturerId: number) =>
     request<LecturerDetailDto>(`/api/lecturers/${lecturerId}`),
-  myLecturerProfile: () => request<LecturerDetailDto>('/api/lecturers/me'),
-  updateLecturerProfile: (dto: UpdateLecturerProfileDto) =>
-    request<LecturerDetailDto>('/api/lecturers/profile', {
-      method: 'PUT',
-      body: JSON.stringify(dto),
-    }),
 
   appointmentsById: (id: number) => request<AppointmentResponseDto>(`/api/appointments/${id}`),
   myAppointments: () => request<AppointmentResponseDto[]>('/api/appointments/my-appointments'),
@@ -68,16 +51,6 @@ export const api = {
   createAppointment: (dto: CreateAppointmentDto) =>
     request<AppointmentResponseDto>('/api/appointments', {
       method: 'POST',
-      body: JSON.stringify(dto),
-    }),
-  updateAppointment: (id: number, dto: UpdateAppointmentDto) =>
-    request<AppointmentResponseDto>(`/api/appointments/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(dto),
-    }),
-  rescheduleAppointment: (id: number, dto: RescheduleAppointmentDto) =>
-    request<AppointmentResponseDto>(`/api/appointments/${id}/reschedule`, {
-      method: 'PUT',
       body: JSON.stringify(dto),
     }),
   updateAppointmentStatus: (id: number, dto: UpdateAppointmentStatusDto) =>
@@ -99,11 +72,6 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(dto),
     }),
-  updateSlot: (id: number, dto: UpdateSlotDto) =>
-    request<SlotResponseDto>(`/api/availabilityslots/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(dto),
-    }),
   deleteSlot: (id: number) =>
     request<{ message: string }>(`/api/availabilityslots/${id}`, {
       method: 'DELETE',
@@ -113,11 +81,6 @@ export const api = {
   studentById: (studentId: number) =>
     request<StudentDetailDto>(`/api/students/${studentId}`),
   myStudentProfile: () => request<StudentDetailDto>('/api/students/me'),
-  updateStudentProfile: (dto: UpdateStudentProfileDto) =>
-    request<StudentDetailDto>('/api/students/profile', {
-      method: 'PUT',
-      body: JSON.stringify(dto),
-    }),
 
   users: () => request<AdminUserListItemDto[]>('/api/admin/users'),
   userById: (userId: number) => request<AdminUserDetailDto>(`/api/admin/users/${userId}`),

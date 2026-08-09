@@ -9,6 +9,5 @@ namespace AcademicAppoinment.Services.Interfaces
         Task<IReadOnlyList<SlotResponseDto>> GetMySlotsAsync(ClaimsPrincipal user);
         Task<IReadOnlyList<SlotResponseDto>> GetSlotsByLecturerAsync(int lecturerId);
         Task<string> DeleteSlotAsync(int id, ClaimsPrincipal user);
-        Task<SlotResponseDto> UpdateSlotAsync(int id, UpdateSlotDto dto, ClaimsPrincipal user);
     }
 }

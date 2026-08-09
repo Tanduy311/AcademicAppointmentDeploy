@@ -1,8 +1,8 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { formatDateTime } from '../utils/format';
-import type { SlotResponseDto, UpdateSlotDto } from '../types/api';
-import { IconClock, IconPlus, IconMapPin, IconTrash, IconFileText, IconAlert, IconEdit } from '../components/Icons';
+import type { SlotResponseDto } from '../types/api';
+import { IconClock, IconPlus, IconMapPin, IconTrash, IconFileText, IconAlert } from '../components/Icons';
 
 export function LecturerSlotsPage() {
   const [items, setItems] = useState<SlotResponseDto[]>([]);
@@ -15,16 +15,6 @@ export function LecturerSlotsPage() {
     meetingType: 'Offline',
     locationOrLink: 'Phòng 302-A1',
   });
-
-  // Edit Slot Modal state
-  const [editingSlot, setEditingSlot] = useState<SlotResponseDto | null>(null);
-  const [editForm, setEditForm] = useState<UpdateSlotDto>({
-    startTime: '',
-    endTime: '',
-    meetingType: 'Offline',
-    locationOrLink: '',
-  });
-  const [submittingEdit, setSubmittingEdit] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -73,34 +63,6 @@ export function LecturerSlotsPage() {
       await load();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể xóa khung giờ.');
-    }
-  };
-
-  const openEditModal = (slot: SlotResponseDto) => {
-    setEditingSlot(slot);
-    // Format ISO string for datetime-local input (YYYY-MM-DDTHH:mm)
-    const startStr = slot.startTime ? new Date(slot.startTime).toISOString().slice(0, 16) : '';
-    const endStr = slot.endTime ? new Date(slot.endTime).toISOString().slice(0, 16) : '';
-    setEditForm({
-      startTime: startStr,
-      endTime: endStr,
-      meetingType: slot.meetingType || 'Offline',
-      locationOrLink: slot.locationOrLink || '',
-    });
-  };
-
-  const handleUpdateSlotSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!editingSlot) return;
-    setSubmittingEdit(true);
-    try {
-      await api.updateSlot(editingSlot.availabilitySlotId, editForm);
-      setEditingSlot(null);
-      await load();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Không thể cập nhật khung giờ.');
-    } finally {
-      setSubmittingEdit(false);
     }
   };
 
@@ -199,7 +161,7 @@ export function LecturerSlotsPage() {
                   <IconClock size={16} style={{ color: 'var(--accent)' }} />
                   <span>{formatDateTime(slot.startTime)} ➔ {formatDateTime(slot.endTime)}</span>
                 </div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', gap: 12, alignItems: 'center' }}>
                   <span className="badge badge-neutral">{slot.meetingType}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <IconMapPin size={14} />
@@ -211,28 +173,15 @@ export function LecturerSlotsPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: 8 }}>
-                {slot.isAvailable && (
-                  <button
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                    type="button"
-                    onClick={() => openEditModal(slot)}
-                  >
-                    <IconEdit size={14} />
-                    <span>Sửa</span>
-                  </button>
-                )}
-                <button
-                  className="btn btn-danger"
-                  style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                  type="button"
-                  onClick={() => remove(slot.availabilitySlotId)}
-                >
-                  <IconTrash size={14} />
-                  <span>Xóa Slot</span>
-                </button>
-              </div>
+              <button
+                className="btn btn-danger"
+                style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                type="button"
+                onClick={() => remove(slot.availabilitySlotId)}
+              >
+                <IconTrash size={14} />
+                <span>Xóa Slot</span>
+              </button>
             </div>
           ))
         )}
@@ -243,67 +192,6 @@ export function LecturerSlotsPage() {
           </div>
         )}
       </div>
-
-      {/* Edit Slot Modal Overlay */}
-      {editingSlot && (
-        <div className="modal-overlay" onClick={() => setEditingSlot(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500, width: '90%' }}>
-            <h3 style={{ marginTop: 0, marginBottom: 16 }}>Chỉnh Sửa Khung Giờ Rảnh</h3>
-            <form onSubmit={handleUpdateSlotSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div>
-                <label className="form-label">Thời gian bắt đầu</label>
-                <input
-                  type="datetime-local"
-                  className="input"
-                  required
-                  value={editForm.startTime}
-                  onChange={(e) => setEditForm({ ...editForm, startTime: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="form-label">Thời gian kết thúc</label>
-                <input
-                  type="datetime-local"
-                  className="input"
-                  required
-                  value={editForm.endTime}
-                  onChange={(e) => setEditForm({ ...editForm, endTime: e.target.value })}
-                />
-              </div>
-
-              <div>
-                <label className="form-label">Hình thức gặp</label>
-                <select
-                  className="input"
-                  value={editForm.meetingType}
-                  onChange={(e) => setEditForm({ ...editForm, meetingType: e.target.value })}
-                >
-                  <option value="Offline">Offline (Tại trường)</option>
-                  <option value="Online">Online (Google Meet / Zoom)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="form-label">Địa điểm hoặc Link cuộc họp</label>
-                <input
-                  type="text"
-                  className="input"
-                  value={editForm.locationOrLink || ''}
-                  onChange={(e) => setEditForm({ ...editForm, locationOrLink: e.target.value })}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setEditingSlot(null)}>Hủy</button>
-                <button type="submit" className="btn btn-primary" disabled={submittingEdit}>
-                  {submittingEdit ? 'Đang lưu...' : 'Lưu Thay Đổi'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

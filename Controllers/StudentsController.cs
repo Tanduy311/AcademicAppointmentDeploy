@@ -32,14 +32,6 @@ namespace AcademicAppoinment.Controllers
             return Ok(result);
         }
 
-        [HttpPut("profile")]
-        [Authorize(Roles = "Student")]
-        public async Task<IActionResult> UpdateMyProfile([FromBody] AcademicAppoinment.DTOs.Students.UpdateStudentProfileDto dto)
-        {
-            var result = await _studentService.UpdateMyProfileAsync(dto, User);
-            return Ok(result);
-        }
-
         [HttpGet("{studentId}")]
         public async Task<IActionResult> GetStudentById(int studentId)
         {

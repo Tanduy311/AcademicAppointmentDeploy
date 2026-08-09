@@ -9,6 +9,5 @@ namespace AcademicAppoinment.Services.Interfaces
         Task<AuthResponseDto> RegisterLecturerAsync(RegisterLecturerDto dto);
         Task<AuthResponseDto> LoginAsync(LoginDto dto);
         Task<CurrentUserResponseDto> GetCurrentUserAsync(ClaimsPrincipal user);
-        Task<bool> ChangePasswordAsync(ChangePasswordDto dto, ClaimsPrincipal user);
     }
 }

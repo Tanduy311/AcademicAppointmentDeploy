@@ -111,44 +111,6 @@ namespace AcademicAppoinment.Services
             return "Xóa khung giờ rảnh thành công.";
         }
 
-        public async Task<SlotResponseDto> UpdateSlotAsync(int id, UpdateSlotDto dto, ClaimsPrincipal user)
-        {
-            var lecturer = await GetCurrentLecturerAsync(user);
-            if (lecturer == null)
-            {
-                throw new UnauthorizedAccessException("Không tìm thấy thông tin Giảng viên.");
-            }
-
-            var slot = await _repository.GetAvailabilitySlotWithLecturerAsync(id);
-            if (slot == null)
-            {
-                throw new KeyNotFoundException("Không tìm thấy khung giờ này.");
-            }
-
-            if (slot.LecturerId != lecturer.LecturerId)
-            {
-                throw new ForbiddenAccessException("Bạn không có quyền chỉnh sửa khung giờ của giảng viên khác.");
-            }
-
-            if (!slot.IsAvailable)
-            {
-                throw new ArgumentException("Không thể chỉnh sửa khung giờ này vì đã có Sinh viên đặt lịch.");
-            }
-
-            if (dto.StartTime >= dto.EndTime)
-            {
-                throw new ArgumentException("Thời gian kết thúc phải sau thời gian bắt đầu.");
-            }
-
-            slot.StartTime = dto.StartTime;
-            slot.EndTime = dto.EndTime;
-            slot.MeetingType = dto.MeetingType;
-            slot.LocationOrLink = dto.LocationOrLink;
-
-            await _repository.SaveChangesAsync();
-            return ToSlotResponseDto(slot);
-        }
-
         private async Task<Lecturer?> GetCurrentLecturerAsync(ClaimsPrincipal user)
         {
             var lecturerIdClaim = user.FindFirst("LecturerId")?.Value;

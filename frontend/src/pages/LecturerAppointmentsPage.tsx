@@ -3,7 +3,6 @@ import { api } from '../services/api';
 import { formatDateTime } from '../utils/format';
 import type { AppointmentResponseDto } from '../types/api';
 import { StatusBadge } from '../components/StatusBadge';
-import { AppointmentDetailModal } from '../components/AppointmentDetailModal';
 import {
   IconFileText,
   IconBookmark,
@@ -19,9 +18,8 @@ export function LecturerAppointmentsPage() {
   const [items, setItems] = useState<AppointmentResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [detailItem, setDetailItem] = useState<AppointmentResponseDto | null>(null);
   const [activeItem, setActiveItem] = useState<AppointmentResponseDto | null>(null);
-  const [actionType, setActionType] = useState<'Confirmed' | 'Rejected'>('Confirmed');
+  const [actionType, setActionType] = useState<'Approved' | 'Rejected'>('Approved');
   const [responseMsg, setResponseMsg] = useState('Thầy đồng ý phê duyệt lịch hẹn, em đến đúng giờ nhé.');
 
   const load = async () => {
@@ -37,10 +35,10 @@ export function LecturerAppointmentsPage() {
     load();
   }, []);
 
-  const openDecisionModal = (item: AppointmentResponseDto, status: 'Confirmed' | 'Rejected') => {
+  const openDecisionModal = (item: AppointmentResponseDto, status: 'Approved' | 'Rejected') => {
     setActiveItem(item);
     setActionType(status);
-    setResponseMsg(status === 'Confirmed' ? 'Thầy đồng ý phê duyệt lịch hẹn, em đến đúng giờ nhé.' : 'Thầy bận lịch họp đột xuất, em đăng ký lại khung giờ khác giúp thầy nhé.');
+    setResponseMsg(status === 'Approved' ? 'Thầy đồng ý phê duyệt lịch hẹn, em đến đúng giờ nhé.' : 'Thầy bận lịch họp đột xuất, em đăng ký lại khung giờ khác giúp thầy nhé.');
   };
 
   const handleDecisionSubmit = async () => {
@@ -91,7 +89,7 @@ export function LecturerAppointmentsPage() {
                 </h3>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                   <IconUser size={16} />
-                  <span>Sinh viên đăng ký: <strong>{item.studentName}</strong> ({item.studentCode ? `Mã SV: ${item.studentCode}` : ''})</span>
+                  <span>Sinh viên đăng ký: <strong>{item.studentName}</strong> (Mã SV: {item.studentCode || 'SV001'})</span>
                 </div>
               </div>
 
@@ -123,40 +121,30 @@ export function LecturerAppointmentsPage() {
               </div>
             ) : null}
 
-            <div style={{ paddingTop: 8, display: 'flex', gap: 12, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                onClick={() => setDetailItem(item)}
-              >
-                Chi Tiết Lịch Hẹn
-              </button>
-
-              {item.status === 'Pending' ? (
-                <>
-                  <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                    onClick={() => openDecisionModal(item, 'Rejected')}
-                    disabled={busyId === item.appointmentId}
-                  >
-                    <IconClose size={15} />
-                    <span>Từ Chối</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-success btn-sm"
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                    onClick={() => openDecisionModal(item, 'Confirmed')}
-                    disabled={busyId === item.appointmentId}
-                  >
-                    <IconCheck size={15} />
-                    <span>Phê Duyệt Lịch Hẹn</span>
-                  </button>
-                </>
-              ) : null}
-            </div>
+            {item.status === 'Pending' ? (
+              <div style={{ paddingTop: 8, display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  onClick={() => openDecisionModal(item, 'Rejected')}
+                  disabled={busyId === item.appointmentId}
+                >
+                  <IconClose size={15} />
+                  <span>Từ Chối</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  style={{ fontSize: '0.82rem', padding: '6px 16px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  onClick={() => openDecisionModal(item, 'Approved')}
+                  disabled={busyId === item.appointmentId}
+                >
+                  <IconCheck size={15} />
+                  <span>Phê Duyệt Lịch Hẹn</span>
+                </button>
+              </div>
+            ) : null}
           </div>
         ))}
 
@@ -167,18 +155,12 @@ export function LecturerAppointmentsPage() {
         )}
       </div>
 
-      {/* Detail Modal Overlay */}
-      <AppointmentDetailModal
-        appointment={detailItem}
-        onClose={() => setDetailItem(null)}
-      />
-
       {/* Decision Response Modal Overlay */}
       {activeItem && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-              {actionType === 'Confirmed' ? (
+              {actionType === 'Approved' ? (
                 <>
                   <IconCheck size={20} style={{ color: 'var(--success)' }} />
                   <span>Phê Duyệt Lịch Hẹn</span>
@@ -210,11 +192,11 @@ export function LecturerAppointmentsPage() {
               </button>
               <button
                 type="button"
-                className={actionType === 'Confirmed' ? 'btn btn-success' : 'btn btn-danger'}
+                className={actionType === 'Approved' ? 'btn btn-success' : 'btn btn-danger'}
                 onClick={handleDecisionSubmit}
                 disabled={busyId === activeItem.appointmentId}
               >
-                {busyId === activeItem.appointmentId ? 'Đang lưu...' : actionType === 'Confirmed' ? 'Xác Nhận Duyệt' : 'Xác Nhận Từ Chối'}
+                {busyId === activeItem.appointmentId ? 'Đang lưu...' : actionType === 'Approved' ? 'Xác Nhận Duyệt' : 'Xác Nhận Từ Chối'}
               </button>
             </div>
           </div>
