@@ -46,7 +46,7 @@ export function LecturerAppointmentsPage() {
     setBusyId(activeItem.appointmentId);
     try {
       await api.updateAppointmentStatus(activeItem.appointmentId, {
-        status: actionType,
+        status: actionType === 'Approved' ? 'Confirmed' : 'Rejected',
         lecturerResponse: responseMsg,
       });
       setActiveItem(null);

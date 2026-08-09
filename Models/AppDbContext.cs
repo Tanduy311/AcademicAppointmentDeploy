@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace AcademicAppoinment.Models
 {
@@ -84,12 +84,12 @@ namespace AcademicAppoinment.Models
                 .HasForeignKey(a => a.LecturerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // AvailabilitySlot 1 - 0..1 Appointment
+            // AvailabilitySlot 1 - N Appointment
             modelBuilder.Entity<Appointment>()
                 .HasOne(a => a.AvailabilitySlot)
-                .WithOne(s => s.Appointment)
-                .HasForeignKey<Appointment>(a => a.AvailabilitySlotId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .WithMany(s => s.Appointments)
+                .HasForeignKey(a => a.AvailabilitySlotId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // User 1 - N Notification
             modelBuilder.Entity<Notification>()

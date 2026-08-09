@@ -3,6 +3,7 @@ using AcademicAppoinment.Helpers.Exceptions;
 using AcademicAppoinment.Models;
 using AcademicAppoinment.Repositories;
 using AcademicAppoinment.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace AcademicAppoinment.Services
@@ -32,9 +33,12 @@ namespace AcademicAppoinment.Services
                 throw new KeyNotFoundException("Không tìm thấy khung giờ rảnh.");
             }
 
-            if (!slot.IsAvailable)
+            var hasActiveAppointment = await _context.Appointments
+                .AnyAsync(a => a.AvailabilitySlotId == dto.AvailabilitySlotId && (a.Status == "Pending" || a.Status == "Confirmed"));
+
+            if (!slot.IsAvailable || hasActiveAppointment)
             {
-                throw new ArgumentException("Khung giờ này đã được đặt.");
+                throw new ArgumentException("Khung giờ này đã được người khác đặt lịch. Vui lòng chọn khung giờ khác.");
             }
 
             if (slot.StartTime <= DateTime.Now)
@@ -308,7 +312,7 @@ namespace AcademicAppoinment.Services
 
         private static string NormalizeAppointmentStatus(string status)
         {
-            if (status.Equals("Confirmed", StringComparison.OrdinalIgnoreCase))
+            if (status.Equals("Confirmed", StringComparison.OrdinalIgnoreCase) || status.Equals("Approved", StringComparison.OrdinalIgnoreCase))
             {
                 return "Confirmed";
             }

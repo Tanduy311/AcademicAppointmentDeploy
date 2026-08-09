@@ -3,16 +3,19 @@ using AcademicAppoinment.Helpers.Exceptions;
 using AcademicAppoinment.Models;
 using AcademicAppoinment.Repositories;
 using AcademicAppoinment.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace AcademicAppoinment.Services
 {
     public class AvailabilitySlotService : IAvailabilitySlotService
     {
+        private readonly AppDbContext _context;
         private readonly IAppRepository _repository;
 
-        public AvailabilitySlotService(IAppRepository repository)
+        public AvailabilitySlotService(AppDbContext context, IAppRepository repository)
         {
+            _context = context;
             _repository = repository;
         }
 
@@ -74,8 +77,13 @@ namespace AcademicAppoinment.Services
         public async Task<IReadOnlyList<SlotResponseDto>> GetSlotsByLecturerAsync(int lecturerId)
         {
             var slots = await _repository.GetSlotsByLecturerIdAsync(lecturerId);
+            var activeBookedSlotIds = await _context.Appointments
+                .Where(a => a.Status == "Pending" || a.Status == "Confirmed")
+                .Select(a => a.AvailabilitySlotId)
+                .ToListAsync();
+
             return slots
-                .Where(s => s.IsAvailable && s.StartTime > DateTime.Now)
+                .Where(s => s.IsAvailable && !activeBookedSlotIds.Contains(s.AvailabilitySlotId) && s.StartTime > DateTime.Now)
                 .OrderBy(s => s.StartTime)
                 .Select(ToSlotResponseDto)
                 .ToList();
@@ -100,9 +108,21 @@ namespace AcademicAppoinment.Services
                 throw new ForbiddenAccessException("Bạn không có quyền xóa khung giờ của giảng viên khác.");
             }
 
-            if (!slot.IsAvailable)
+            var hasActiveAppointment = await _context.Appointments
+                .AnyAsync(a => a.AvailabilitySlotId == id && (a.Status == "Pending" || a.Status == "Confirmed"));
+
+            if (hasActiveAppointment)
             {
-                throw new ArgumentException("Không thể xóa khung giờ này vì đã có Sinh viên đặt lịch.");
+                throw new ArgumentException("Không thể xóa khung giờ này vì đang có Sinh viên đặt lịch tư vấn.");
+            }
+
+            var relatedAppointments = await _context.Appointments
+                .Where(a => a.AvailabilitySlotId == id)
+                .ToListAsync();
+
+            if (relatedAppointments.Any())
+            {
+                _context.Appointments.RemoveRange(relatedAppointments);
             }
 
             _repository.RemoveSlot(slot);

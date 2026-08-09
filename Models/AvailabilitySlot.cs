@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace AcademicAppoinment.Models
@@ -31,6 +31,6 @@ namespace AcademicAppoinment.Models
         public Lecturer? Lecturer { get; set; }
 
         [JsonIgnore]
-        public Appointment? Appointment { get; set; }
+        public ICollection<Appointment> Appointments { get; set; } = new List<Appointment>();
     }
 }

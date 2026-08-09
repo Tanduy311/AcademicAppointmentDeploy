@@ -126,6 +126,7 @@ namespace AcademicAppoinment.Repositories
             _context.AvailabilitySlots
                 .Include(s => s.Lecturer)
                 .ThenInclude(l => l!.User)
+                .Include(s => s.Appointments)
                 .Where(s => s.LecturerId == lecturerId)
                 .OrderByDescending(s => s.StartTime)
                 .ToListAsync();
