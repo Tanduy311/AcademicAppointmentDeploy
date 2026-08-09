@@ -20,6 +20,7 @@ export function StudentAppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [detailLoadingId, setDetailLoadingId] = useState<number | null>(null);
   const [selectedItem, setSelectedItem] = useState<AppointmentResponseDto | null>(null);
+  const [modalMode, setModalMode] = useState<'detail' | 'cancel'>('detail');
   const [cancelBusyId, setCancelBusyId] = useState<number | null>(null);
   const [reason, setReason] = useState('Em bận đột xuất lịch học trên lớp.');
 
@@ -43,6 +44,21 @@ export function StudentAppointmentsPage() {
     try {
       const detail = await api.appointmentsById(item.appointmentId);
       setSelectedItem(detail);
+      setModalMode('detail');
+      setReason('Em bận đột xuất lịch học trên lớp.');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Không thể tải chi tiết lịch hẹn.');
+    } finally {
+      setDetailLoadingId(null);
+    }
+  };
+
+  const openCancel = async (item: AppointmentResponseDto) => {
+    setDetailLoadingId(item.appointmentId);
+    try {
+      const detail = await api.appointmentsById(item.appointmentId);
+      setSelectedItem(detail);
+      setModalMode('cancel');
       setReason('Em bận đột xuất lịch học trên lớp.');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể tải chi tiết lịch hẹn.');
@@ -144,8 +160,8 @@ export function StudentAppointmentsPage() {
                   type="button"
                   className="btn btn-danger"
                   style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                  onClick={() => setSelectedItem(item)}
-                  disabled={cancelBusyId === item.appointmentId}
+                  onClick={() => void openCancel(item)}
+                  disabled={detailLoadingId === item.appointmentId || cancelBusyId === item.appointmentId}
                 >
                   <IconClose size={15} />
                   <span>Hủy Lịch Hẹn</span>
@@ -165,48 +181,100 @@ export function StudentAppointmentsPage() {
       {/* Detail / Cancel Modal Overlay */}
       {selectedItem && (
         <div className="modal-overlay">
-          <div className="modal-content">
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <IconFileText size={20} style={{ color: 'var(--accent)' }} />
-              <span>Chi Tiết Lịch Hẹn</span>
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className="modal-content" style={{ maxWidth: 760, width: 'min(760px, calc(100vw - 32px))' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
               <div>
-                <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>{selectedItem.topic}</div>
-                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginTop: 4 }}>
-                  Giảng viên: <strong>{selectedItem.lecturerName}</strong> ({selectedItem.department || 'Khoa CNTT'})
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <IconFileText size={20} style={{ color: 'var(--accent)' }} />
+                  <span>{modalMode === 'detail' ? 'Chi Tiết Lịch Hẹn' : 'Hủy Lịch Hẹn'}</span>
+                </h2>
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                  {selectedItem.lecturerName} {selectedItem.department ? `- ${selectedItem.department}` : ''}
+                </div>
+              </div>
+              <StatusBadge value={selectedItem.status} />
+            </div>
+
+            <div style={{ display: 'grid', gap: 16 }}>
+              <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6 }}>
+                  {selectedItem.topic}
+                </div>
+                <div style={{ color: 'var(--text-secondary)', fontSize: '0.92rem' }}>
+                  Sinh viên: <strong>{selectedItem.studentName}</strong>
+                  {selectedItem.studentCode ? ` (Mã SV: ${selectedItem.studentCode})` : ''}
                 </div>
               </div>
 
-              <div style={{ background: '#f8fafc', padding: 12, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'grid', gap: 10 }}>
-                <div><strong>Thời gian:</strong> {formatDateTime(selectedItem.startTime)} - {formatDateTime(selectedItem.endTime)}</div>
-                <div><strong>Hình thức:</strong> {selectedItem.meetingType} {selectedItem.locationOrLink ? `(${selectedItem.locationOrLink})` : ''}</div>
-                <div><strong>Trạng thái:</strong> <StatusBadge value={selectedItem.status} /></div>
-                {selectedItem.description ? <div><strong>Ghi chú:</strong> {selectedItem.description}</div> : null}
-                {selectedItem.lecturerResponse ? <div><strong>Phản hồi giảng viên:</strong> {selectedItem.lecturerResponse}</div> : null}
-                {selectedItem.cancellationReason ? <div><strong>Lý do hủy:</strong> {selectedItem.cancellationReason}</div> : null}
+              <div className="grid-2" style={{ gap: 12 }}>
+                <div style={{ background: '#fff', padding: 14, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>Thời gian</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {formatDateTime(selectedItem.startTime)} - {formatDateTime(selectedItem.endTime)}
+                  </div>
+                </div>
+                <div style={{ background: '#fff', padding: 14, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>Hình thức</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {selectedItem.meetingType} {selectedItem.locationOrLink ? `- ${selectedItem.locationOrLink}` : ''}
+                  </div>
+                </div>
               </div>
 
-              {canCancel(selectedItem.status) ? (
-                <>
-                  <div style={{ height: 1, background: 'var(--border-subtle)' }} />
+              {selectedItem.description ? (
+                <div style={{ background: '#fff', padding: 14, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>Ghi chú</div>
+                  <div style={{ color: 'var(--text-primary)', lineHeight: 1.6 }}>{selectedItem.description}</div>
+                </div>
+              ) : null}
+
+              {selectedItem.lecturerResponse ? (
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: 14, borderRadius: 'var(--radius-md)', color: '#1d4ed8', lineHeight: 1.6 }}>
+                  <div style={{ fontSize: '0.8rem', marginBottom: 4, fontWeight: 600 }}>Phản hồi từ giảng viên</div>
+                  <div>{selectedItem.lecturerResponse}</div>
+                </div>
+              ) : null}
+
+              {selectedItem.cancellationReason ? (
+                <div style={{ background: '#fff7ed', border: '1px solid #fed7aa', padding: 14, borderRadius: 'var(--radius-md)', color: '#c2410c', lineHeight: 1.6 }}>
+                  <div style={{ fontSize: '0.8rem', marginBottom: 4, fontWeight: 600 }}>Lý do hủy</div>
+                  <div>{selectedItem.cancellationReason}</div>
+                </div>
+              ) : null}
+
+              {modalMode === 'cancel' && canCancel(selectedItem.status) ? (
+                <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 16 }}>
                   <label className="field">
-                    <span>Lý do hủy lịch:</span>
+                    <span>Lý do hủy lịch</span>
                     <textarea
-                      rows={3}
+                      rows={4}
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       placeholder="Nhập lý do hủy lịch..."
                     />
                   </label>
-                </>
+                </div>
               ) : null}
 
-              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setSelectedItem(null)}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
+                {modalMode === 'cancel' && canCancel(selectedItem.status) ? (
+                  <button type="button" className="btn btn-secondary" onClick={() => setModalMode('detail')}>
+                    Quay Lại
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setSelectedItem(null)}
+                >
                   Đóng
                 </button>
-                {canCancel(selectedItem.status) ? (
+                {modalMode === 'detail' && canCancel(selectedItem.status) ? (
+                  <button type="button" className="btn btn-danger" onClick={() => setModalMode('cancel')}>
+                    Hủy Lịch Hẹn
+                  </button>
+                ) : null}
+                {modalMode === 'cancel' && canCancel(selectedItem.status) ? (
                   <button type="button" className="btn btn-danger" onClick={handleCancelSubmit} disabled={cancelBusyId === selectedItem.appointmentId}>
                     {cancelBusyId === selectedItem.appointmentId ? 'Đang Hủy...' : 'Xác Nhận Hủy'}
                   </button>
