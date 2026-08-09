@@ -27,6 +27,8 @@ namespace AcademicAppoinment.Services
                 throw new UnauthorizedAccessException("Không tìm thấy thông tin Giảng viên.");
             }
 
+            ValidateSlot(dto);
+
             var isOverlap = await _repository.HasSlotOverlapAsync(lecturer.LecturerId, dto.StartTime, dto.EndTime);
             if (isOverlap)
             {
@@ -103,6 +105,11 @@ namespace AcademicAppoinment.Services
                 throw new KeyNotFoundException("Không tìm thấy khung giờ này.");
             }
 
+            if (slot.IsDeleted)
+            {
+                throw new KeyNotFoundException("Khung giờ không tồn tại.");
+            }
+
             if (slot.LecturerId != lecturer.LecturerId)
             {
                 throw new ForbiddenAccessException("Bạn không có quyền xóa khung giờ của giảng viên khác.");
@@ -116,19 +123,35 @@ namespace AcademicAppoinment.Services
                 throw new ArgumentException("Không thể xóa khung giờ này vì đang có Sinh viên đặt lịch tư vấn.");
             }
 
-            var relatedAppointments = await _context.Appointments
-                .Where(a => a.AvailabilitySlotId == id)
-                .ToListAsync();
-
-            if (relatedAppointments.Any())
-            {
-                _context.Appointments.RemoveRange(relatedAppointments);
-            }
-
-            _repository.RemoveSlot(slot);
+            slot.IsDeleted = true;
+            slot.IsAvailable = false;
             await _repository.SaveChangesAsync();
 
             return "Xóa khung giờ rảnh thành công.";
+        }
+
+        private static void ValidateSlot(CreateSlotDto dto)
+        {
+            if (dto.StartTime < DateTime.Now)
+            {
+                throw new ArgumentException("Thời gian bắt đầu không được ở quá khứ.");
+            }
+
+            if (dto.EndTime <= dto.StartTime)
+            {
+                throw new ArgumentException("Thời gian kết thúc phải lớn hơn thời gian bắt đầu.");
+            }
+
+            if (!string.Equals(dto.MeetingType, "Online", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(dto.MeetingType, "Offline", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("Hình thức gặp chỉ được là Online hoặc Offline.");
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.LocationOrLink))
+            {
+                throw new ArgumentException("Vui lòng nhập địa điểm hoặc link gặp.");
+            }
         }
 
         private async Task<Lecturer?> GetCurrentLecturerAsync(ClaimsPrincipal user)

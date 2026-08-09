@@ -4,6 +4,7 @@ using AcademicAppoinment.Models;
 using AcademicAppoinment.Repositories;
 using AcademicAppoinment.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using System.Security.Claims;
 
 namespace AcademicAppoinment.Services
@@ -27,10 +28,19 @@ namespace AcademicAppoinment.Services
                 throw new UnauthorizedAccessException("Không tìm thấy thông tin sinh viên.");
             }
 
+            await using var transaction = _context.Database.IsRelational()
+                ? await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable)
+                : null;
+
             var slot = await _repository.GetAvailabilitySlotWithLecturerAsync(dto.AvailabilitySlotId);
             if (slot == null)
             {
                 throw new KeyNotFoundException("Không tìm thấy khung giờ rảnh.");
+            }
+
+            if (slot.IsDeleted)
+            {
+                throw new KeyNotFoundException("Khung giờ không tồn tại.");
             }
 
             var hasActiveAppointment = await _context.Appointments
@@ -57,11 +67,16 @@ namespace AcademicAppoinment.Services
                 CreatedAt = DateTime.Now
             };
 
-            await using var transaction = await _context.Database.BeginTransactionAsync();
-
             slot.IsAvailable = false;
             _repository.AddAppointment(appointment);
-            await _repository.SaveChangesAsync();
+            try
+            {
+                await _repository.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new ArgumentException("Khung giờ này đã được đặt lịch. Vui lòng chọn khung giờ khác.", ex);
+            }
 
             _repository.AddNotification(new Notification
             {
@@ -76,7 +91,10 @@ namespace AcademicAppoinment.Services
             });
 
             await _repository.SaveChangesAsync();
-            await transaction.CommitAsync();
+            if (transaction != null)
+            {
+                await transaction.CommitAsync();
+            }
 
             var created = await _repository.GetAppointmentDetailByIdAsync(appointment.AppointmentId);
             if (created == null)

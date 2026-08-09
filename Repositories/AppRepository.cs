@@ -118,6 +118,7 @@ namespace AcademicAppoinment.Repositories
         public Task<bool> HasSlotOverlapAsync(int lecturerId, DateTime startTime, DateTime endTime) =>
             _context.AvailabilitySlots.AnyAsync(s =>
                 s.LecturerId == lecturerId &&
+                !s.IsDeleted &&
                 ((startTime >= s.StartTime && startTime < s.EndTime) ||
                  (endTime > s.StartTime && endTime <= s.EndTime) ||
                  (startTime <= s.StartTime && endTime >= s.EndTime)));
@@ -127,7 +128,7 @@ namespace AcademicAppoinment.Repositories
                 .Include(s => s.Lecturer)
                 .ThenInclude(l => l!.User)
                 .Include(s => s.Appointments)
-                .Where(s => s.LecturerId == lecturerId)
+                .Where(s => s.LecturerId == lecturerId && !s.IsDeleted)
                 .OrderByDescending(s => s.StartTime)
                 .ToListAsync();
 

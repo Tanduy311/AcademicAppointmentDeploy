@@ -18,7 +18,7 @@ namespace AcademicAppoinment.Tests
             SeedRoles(context);
             SeedStudentUser(context);
 
-            var service = new AuthService(new AppRepository(context), new JwtTokenHelper(TestDbFactory.CreateJwtConfig()));
+            var service = new AuthService(new AppRepository(context), new JwtTokenHelper(TestDbFactory.CreateJwtConfig()), context);
 
             var result = await service.LoginAsync(new LoginDto
             {
@@ -38,7 +38,7 @@ namespace AcademicAppoinment.Tests
             SeedRoles(context);
             SeedStudentUser(context);
 
-            var service = new AuthService(new AppRepository(context), new JwtTokenHelper(TestDbFactory.CreateJwtConfig()));
+            var service = new AuthService(new AppRepository(context), new JwtTokenHelper(TestDbFactory.CreateJwtConfig()), context);
 
             await Assert.ThrowsExceptionAsync<UnauthorizedAccessException>(() => service.LoginAsync(new LoginDto
             {

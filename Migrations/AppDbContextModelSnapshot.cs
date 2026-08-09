@@ -67,7 +67,8 @@ namespace AcademicAppoinment.Migrations
                     b.HasKey("AppointmentId");
 
                     b.HasIndex("AvailabilitySlotId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Status] IN ('Pending', 'Confirmed')");
 
                     b.HasIndex("LecturerId");
 
@@ -91,6 +92,9 @@ namespace AcademicAppoinment.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsAvailable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<int>("LecturerId")
@@ -334,8 +338,8 @@ namespace AcademicAppoinment.Migrations
             modelBuilder.Entity("AcademicAppoinment.Models.Appointment", b =>
                 {
                     b.HasOne("AcademicAppoinment.Models.AvailabilitySlot", "AvailabilitySlot")
-                        .WithOne("Appointment")
-                        .HasForeignKey("AcademicAppoinment.Models.Appointment", "AvailabilitySlotId")
+                        .WithMany("Appointments")
+                        .HasForeignKey("AvailabilitySlotId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -439,7 +443,7 @@ namespace AcademicAppoinment.Migrations
 
             modelBuilder.Entity("AcademicAppoinment.Models.AvailabilitySlot", b =>
                 {
-                    b.Navigation("Appointment");
+                    b.Navigation("Appointments");
                 });
 
             modelBuilder.Entity("AcademicAppoinment.Models.Lecturer", b =>

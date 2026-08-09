@@ -89,7 +89,12 @@ namespace AcademicAppoinment.Models
                 .HasOne(a => a.AvailabilitySlot)
                 .WithMany(s => s.Appointments)
                 .HasForeignKey(a => a.AvailabilitySlotId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Appointment>()
+                .HasIndex(a => a.AvailabilitySlotId)
+                .IsUnique()
+                .HasFilter("[Status] IN ('Pending', 'Confirmed')");
 
             // User 1 - N Notification
             modelBuilder.Entity<Notification>()

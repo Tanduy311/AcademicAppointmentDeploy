@@ -82,6 +82,16 @@ namespace AcademicAppoinment.Services
                 throw new ArgumentException("Role không hợp lệ.");
             }
 
+            if (string.Equals(role.RoleName, "Student", StringComparison.OrdinalIgnoreCase) && user.Student == null)
+            {
+                throw new ArgumentException("Không thể đổi sang role Student vì người dùng chưa có hồ sơ sinh viên.");
+            }
+
+            if (string.Equals(role.RoleName, "Lecturer", StringComparison.OrdinalIgnoreCase) && user.Lecturer == null)
+            {
+                throw new ArgumentException("Không thể đổi sang role Lecturer vì người dùng chưa có hồ sơ giảng viên.");
+            }
+
             user.RoleId = roleId;
             await _repository.SaveChangesAsync();
             return true;

@@ -3,6 +3,7 @@ using AcademicAppoinment.Helpers;
 using AcademicAppoinment.Models;
 using AcademicAppoinment.Repositories;
 using AcademicAppoinment.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace AcademicAppoinment.Services
@@ -11,11 +12,13 @@ namespace AcademicAppoinment.Services
     {
         private readonly IAppRepository _repository;
         private readonly JwtTokenHelper _jwtTokenHelper;
+        private readonly AppDbContext _context;
 
-        public AuthService(IAppRepository repository, JwtTokenHelper jwtTokenHelper)
+        public AuthService(IAppRepository repository, JwtTokenHelper jwtTokenHelper, AppDbContext context)
         {
             _repository = repository;
             _jwtTokenHelper = jwtTokenHelper;
+            _context = context;
         }
 
         public async Task<AuthResponseDto> RegisterStudentAsync(RegisterStudentDto dto)
@@ -28,6 +31,10 @@ namespace AcademicAppoinment.Services
 
             if (await _repository.StudentCodeExistsAsync(dto.StudentCode))
                 throw new ArgumentException("Mã sinh viên đã tồn tại.");
+
+            await using var transaction = _context.Database.IsRelational()
+                ? await _context.Database.BeginTransactionAsync()
+                : null;
 
             var user = new User
             {
@@ -56,6 +63,11 @@ namespace AcademicAppoinment.Services
             _repository.AddStudent(student);
             await _repository.SaveChangesAsync();
 
+            if (transaction != null)
+            {
+                await transaction.CommitAsync();
+            }
+
             var token = _jwtTokenHelper.GenerateToken(user, "Student", studentId: student.StudentId);
 
             return new AuthResponseDto
@@ -80,6 +92,10 @@ namespace AcademicAppoinment.Services
 
             if (await _repository.LecturerCodeExistsAsync(dto.LecturerCode))
                 throw new ArgumentException("Mã giảng viên đã tồn tại.");
+
+            await using var transaction = _context.Database.IsRelational()
+                ? await _context.Database.BeginTransactionAsync()
+                : null;
 
             var user = new User
             {
@@ -108,6 +124,11 @@ namespace AcademicAppoinment.Services
 
             _repository.AddLecturer(lecturer);
             await _repository.SaveChangesAsync();
+
+            if (transaction != null)
+            {
+                await transaction.CommitAsync();
+            }
 
             var token = _jwtTokenHelper.GenerateToken(user, "Lecturer", lecturerId: lecturer.LecturerId);
 

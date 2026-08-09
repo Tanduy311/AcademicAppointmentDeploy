@@ -23,6 +23,8 @@ namespace AcademicAppoinment.Models
 
         public bool IsAvailable { get; set; } = true;
 
+        public bool IsDeleted { get; set; } = false;
+
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         // Navigation properties
