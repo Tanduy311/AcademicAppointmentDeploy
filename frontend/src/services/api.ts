@@ -79,37 +79,6 @@ export const api = {
     request<SlotResponseDto>('/api/availabilityslots', {
       method: 'POST',
       body: JSON.stringify(dto),
-
-  lecturers: () => request<LecturerListItemDto[]>('/api/lecturers'),
-  lecturerById: (lecturerId: number) =>
-    request<LecturerDetailDto>(`/api/lecturers/${lecturerId}`),
-
-  appointmentsById: (id: number) => request<AppointmentResponseDto>(`/api/appointments/${id}`),
-  myAppointments: () => request<AppointmentResponseDto[]>('/api/appointments/my-appointments'),
-  lecturerAppointments: () => request<AppointmentResponseDto[]>('/api/appointments/lecturer-appointments'),
-  createAppointment: (dto: CreateAppointmentDto) =>
-    request<AppointmentResponseDto>('/api/appointments', {
-      method: 'POST',
-      body: JSON.stringify(dto),
-    }),
-  updateAppointmentStatus: (id: number, dto: UpdateAppointmentStatusDto) =>
-    request<AppointmentResponseDto>(`/api/appointments/${id}/status`, {
-      method: 'PUT',
-      body: JSON.stringify(dto),
-    }),
-  cancelAppointment: (id: number, dto: CancelAppointmentDto) =>
-    request<AppointmentResponseDto>(`/api/appointments/${id}/cancel`, {
-      method: 'PUT',
-      body: JSON.stringify(dto),
-    }),
-
-  slotsByLecturer: (lecturerId: number) =>
-    request<SlotResponseDto[]>(`/api/availabilityslots/lecturer/${lecturerId}`),
-  mySlots: () => request<SlotResponseDto[]>('/api/availabilityslots/my-slots'),
-  createSlot: (dto: CreateSlotDto) =>
-    request<SlotResponseDto>('/api/availabilityslots', {
-      method: 'POST',
-      body: JSON.stringify(dto),
     }),
   deleteSlot: (id: number) =>
     request<{ message: string }>(`/api/availabilityslots/${id}`, {

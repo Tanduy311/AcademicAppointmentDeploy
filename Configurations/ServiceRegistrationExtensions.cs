@@ -34,8 +34,9 @@ namespace AcademicAppoinment.Configurations
             services.AddScoped<ILecturerService, LecturerService>();
             services.AddScoped<IStudentService, StudentService>();
             services.AddScoped<IAdminService, AdminService>();
-            services.AddScoped<IAvatarStorageService, SupabaseAvatarStorageService>();
-            services.AddScoped<ISupabaseStorageService, SupabaseStorageService>();
+            services.AddScoped<SupabaseStorageService>();
+            services.AddScoped<IAvatarStorageService>(provider => provider.GetRequiredService<SupabaseStorageService>());
+            services.AddScoped<ISupabaseStorageService>(provider => provider.GetRequiredService<SupabaseStorageService>());
             services.AddHttpClient();
 
 
