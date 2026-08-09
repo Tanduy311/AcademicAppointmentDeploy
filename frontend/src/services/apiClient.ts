@@ -9,7 +9,7 @@ export class ApiError extends Error {
   }
 }
 
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5168';
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL !== undefined ? import.meta.env.VITE_API_BASE_URL : '';
 const baseUrl = rawBaseUrl.replace(/\/$/, '');
 
 function getToken() {
