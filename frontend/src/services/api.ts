@@ -79,6 +79,37 @@ export const api = {
     request<SlotResponseDto>('/api/availabilityslots', {
       method: 'POST',
       body: JSON.stringify(dto),
+
+  lecturers: () => request<LecturerListItemDto[]>('/api/lecturers'),
+  lecturerById: (lecturerId: number) =>
+    request<LecturerDetailDto>(`/api/lecturers/${lecturerId}`),
+
+  appointmentsById: (id: number) => request<AppointmentResponseDto>(`/api/appointments/${id}`),
+  myAppointments: () => request<AppointmentResponseDto[]>('/api/appointments/my-appointments'),
+  lecturerAppointments: () => request<AppointmentResponseDto[]>('/api/appointments/lecturer-appointments'),
+  createAppointment: (dto: CreateAppointmentDto) =>
+    request<AppointmentResponseDto>('/api/appointments', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    }),
+  updateAppointmentStatus: (id: number, dto: UpdateAppointmentStatusDto) =>
+    request<AppointmentResponseDto>(`/api/appointments/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify(dto),
+    }),
+  cancelAppointment: (id: number, dto: CancelAppointmentDto) =>
+    request<AppointmentResponseDto>(`/api/appointments/${id}/cancel`, {
+      method: 'PUT',
+      body: JSON.stringify(dto),
+    }),
+
+  slotsByLecturer: (lecturerId: number) =>
+    request<SlotResponseDto[]>(`/api/availabilityslots/lecturer/${lecturerId}`),
+  mySlots: () => request<SlotResponseDto[]>('/api/availabilityslots/my-slots'),
+  createSlot: (dto: CreateSlotDto) =>
+    request<SlotResponseDto>('/api/availabilityslots', {
+      method: 'POST',
+      body: JSON.stringify(dto),
     }),
   deleteSlot: (id: number) =>
     request<{ message: string }>(`/api/availabilityslots/${id}`, {
@@ -89,6 +120,28 @@ export const api = {
   studentById: (studentId: number) =>
     request<StudentDetailDto>(`/api/students/${studentId}`),
   myStudentProfile: () => request<StudentDetailDto>('/api/students/me'),
+  updateStudentProfile: (dto: import('../types/api').UpdateStudentProfileDto) =>
+    request<StudentDetailDto>('/api/students/me', {
+      method: 'PUT',
+      body: JSON.stringify(dto),
+    }),
+
+  myLecturerProfile: () => request<LecturerDetailDto>('/api/lecturers/me'),
+  updateLecturerProfile: (dto: import('../types/api').UpdateLecturerProfileDto) =>
+    request<LecturerDetailDto>('/api/lecturers/me', {
+      method: 'PUT',
+      body: JSON.stringify(dto),
+    }),
+
+  uploadFile: (file: File, folder?: string) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const query = folder ? `?folder=${encodeURIComponent(folder)}` : '';
+    return request<import('../types/api').FileUploadResponseDto>(`/api/fileupload/upload${query}`, {
+      method: 'POST',
+      body: formData,
+    });
+  },
 
   users: () => request<AdminUserListItemDto[]>('/api/admin/users'),
   userById: (userId: number) => request<AdminUserDetailDto>(`/api/admin/users/${userId}`),
