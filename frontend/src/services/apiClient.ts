@@ -9,7 +9,8 @@ export class ApiError extends Error {
   }
 }
 
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL !== undefined ? import.meta.env.VITE_API_BASE_URL : '';
+const envUrl = import.meta.env.VITE_API_BASE_URL ?? '';
+const rawBaseUrl = envUrl.startsWith('http://localhost') ? envUrl : '';
 const baseUrl = rawBaseUrl.replace(/\/$/, '');
 
 function getToken() {
