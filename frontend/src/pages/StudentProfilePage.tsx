@@ -1,14 +1,16 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import type { StudentDetailDto } from '../types/api';
-import { IconUser, IconBuilding, IconFileText, IconPlus, IconCheck, IconAlert } from '../components/Icons';
+import { IconUser, IconBuilding, IconFileText, IconCheck, IconAlert, IconUpload } from '../components/Icons';
+import { useAuth } from '../context/AuthContext';
 
 export function StudentProfilePage() {
+  const { refreshMe } = useAuth();
   const [profile, setProfile] = useState<StudentDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
   const [form, setForm] = useState({
@@ -18,7 +20,6 @@ export function StudentProfilePage() {
     major: '',
     className: '',
     academicYear: '',
-    academicProgressFileUrl: '',
   });
 
   const load = async () => {
@@ -33,7 +34,6 @@ export function StudentProfilePage() {
         major: data.major || '',
         className: data.className || '',
         academicYear: data.academicYear || '',
-        academicProgressFileUrl: '',
       });
     } finally {
       setLoading(false);
@@ -44,20 +44,22 @@ export function StudentProfilePage() {
     load();
   }, []);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
+    setUploadingAvatar(true);
     setMsg(null);
     try {
-      const result = await api.uploadFile(file, 'student-files');
-      setForm((prev) => ({ ...prev, academicProgressFileUrl: result.fileUrl }));
-      setMsg({ type: 'success', text: `Tải file '${result.fileName}' lên Supabase Storage thành công!` });
+      const updatedUser = await api.updateMyAvatar(file);
+      setProfile((prev) => prev ? { ...prev, avatarUrl: updatedUser.avatarUrl } : prev);
+      await refreshMe();
+      setMsg({ type: 'success', text: 'Cập nhật ảnh đại diện thành công!' });
     } catch (err) {
-      setMsg({ type: 'danger', text: err instanceof Error ? err.message : 'Không thể tải file lên Supabase Storage.' });
+      setMsg({ type: 'danger', text: err instanceof Error ? err.message : 'Không thể cập nhật ảnh đại diện.' });
     } finally {
-      setUploading(false);
+      setUploadingAvatar(false);
+      e.currentTarget.value = '';
     }
   };
 
@@ -146,6 +148,40 @@ export function StudentProfilePage() {
             <span>Cập Nhật Thông Tin Cá Nhân</span>
           </h2>
 
+          <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div className="avatar-circle" style={{ width: 72, height: 72, fontSize: '1.5rem', borderRadius: 'var(--radius-lg)', overflow: 'hidden', background: profile.avatarUrl ? '#fff' : undefined }}>
+                {profile.avatarUrl ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.fullName}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  profile.fullName.charAt(0)
+                )}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Ảnh đại diện</div>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+                  Hỗ trợ JPG, PNG hoặc WEBP, tối đa 2MB.
+                </div>
+              </div>
+            </div>
+
+            <label className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: uploadingAvatar ? 'not-allowed' : 'pointer' }}>
+              <IconUpload size={16} />
+              <span>{uploadingAvatar ? 'Đang tải...' : 'Đổi ảnh'}</span>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={handleAvatarUpload}
+                disabled={uploadingAvatar}
+                hidden
+              />
+            </label>
+          </div>
+
           <div className="grid-2">
             <label className="field">
               <span>Họ và Tên</span>
@@ -206,32 +242,6 @@ export function StudentProfilePage() {
                 placeholder="Ví dụ: 2023 - 2027"
               />
             </label>
-          </div>
-
-          {/* File Upload Section */}
-          <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px dashed var(--accent)', display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <IconPlus size={16} />
-              <span>Tải Lên File Tiến Độ Học Tập / File Đính Kèm (Supabase Storage)</span>
-            </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              Tải file báo cáo tiến độ (.pdf, .docx, .png...) trực tiếp lên Cloud Supabase Storage
-            </p>
-
-            <input
-              type="file"
-              onChange={handleFileUpload}
-              disabled={uploading}
-              style={{ fontSize: '0.85rem' }}
-            />
-
-            {uploading && <div style={{ fontSize: '0.82rem', color: 'var(--accent)' }}>Đang tải file lên Supabase Storage...</div>}
-
-            {form.academicProgressFileUrl && (
-              <div style={{ marginTop: 8, fontSize: '0.85rem', color: 'var(--success)' }}>
-                ✅ File URL: <a href={form.academicProgressFileUrl} target="_blank" rel="noreferrer" style={{ fontWeight: 600 }}>Xem/Tải xuống File</a>
-              </div>
-            )}
           </div>
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
