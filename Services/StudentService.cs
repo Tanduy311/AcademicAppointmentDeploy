@@ -4,6 +4,7 @@ using AcademicAppoinment.Helpers.Exceptions;
 using AcademicAppoinment.Models;
 using AcademicAppoinment.Repositories;
 using AcademicAppoinment.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace AcademicAppoinment.Services
@@ -11,10 +12,12 @@ namespace AcademicAppoinment.Services
     public class StudentService : IStudentService
     {
         private readonly IAppRepository _repository;
+        private readonly AppDbContext _context;
 
-        public StudentService(IAppRepository repository)
+        public StudentService(IAppRepository repository, AppDbContext context)
         {
             _repository = repository;
+            _context = context;
         }
 
         public async Task<IReadOnlyList<StudentListItemDto>> GetStudentsAsync()
@@ -67,6 +70,65 @@ namespace AcademicAppoinment.Services
             }
 
             return ToDetailDto(await _repository.GetStudentByIdWithDetailsAsync(student.StudentId) ?? student);
+        }
+
+        public async Task<StudentDetailDto> UpdateMyProfileAsync(UpdateStudentProfileDto dto, ClaimsPrincipal user)
+        {
+            var currentUserId = GetCurrentUserId(user);
+            var student = await _context.Students
+                .Include(s => s.User)
+                .FirstOrDefaultAsync(s => s.UserId == currentUserId);
+
+            if (student == null || student.User == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy thông tin sinh viên.");
+            }
+
+            ValidateUpdate(dto);
+
+            if (!string.IsNullOrWhiteSpace(dto.EmailAddress))
+            {
+                var normalizedEmail = dto.EmailAddress.Trim();
+                var emailExists = await _context.Users.AnyAsync(u =>
+                    u.EmailAddress == normalizedEmail && u.UserId != currentUserId);
+
+                if (emailExists)
+                {
+                    throw new ArgumentException("Email đã được sử dụng.");
+                }
+
+                student.User.EmailAddress = normalizedEmail;
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.FullName))
+            {
+                student.User.FullName = dto.FullName.Trim();
+            }
+
+            if (dto.PhoneNumber != null)
+            {
+                student.User.PhoneNumber = string.IsNullOrWhiteSpace(dto.PhoneNumber) ? null : dto.PhoneNumber.Trim();
+            }
+
+            if (dto.Major != null)
+            {
+                student.Major = string.IsNullOrWhiteSpace(dto.Major) ? null : dto.Major.Trim();
+            }
+
+            if (dto.ClassName != null)
+            {
+                student.ClassName = string.IsNullOrWhiteSpace(dto.ClassName) ? null : dto.ClassName.Trim();
+            }
+
+            if (dto.AcademicYear != null)
+            {
+                student.AcademicYear = string.IsNullOrWhiteSpace(dto.AcademicYear) ? null : dto.AcademicYear.Trim();
+            }
+
+            await _repository.SaveChangesAsync();
+
+            var refreshed = await _repository.GetStudentByIdWithDetailsAsync(student.StudentId);
+            return ToDetailDto(refreshed ?? student);
         }
 
         private static StudentDetailDto ToDetailDto(Student student)
@@ -127,6 +189,19 @@ namespace AcademicAppoinment.Services
         private static bool IsAdmin(ClaimsPrincipal user)
         {
             return string.Equals(user.FindFirst(ClaimTypes.Role)?.Value, "Admin", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void ValidateUpdate(UpdateStudentProfileDto dto)
+        {
+            if (dto.FullName != null && string.IsNullOrWhiteSpace(dto.FullName))
+            {
+                throw new ArgumentException("Họ tên không được để trống.");
+            }
+
+            if (dto.EmailAddress != null && string.IsNullOrWhiteSpace(dto.EmailAddress))
+            {
+                throw new ArgumentException("Email không được để trống.");
+            }
         }
     }
 }
