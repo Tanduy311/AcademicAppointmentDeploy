@@ -100,6 +100,12 @@ export function AppShell() {
       show: role === 'Student',
       icon: <IconUser className="nav-icon" />
     },
+    {
+      to: '/app/lecturer-profile',
+      label: 'Hồ Sơ Cá Nhân',
+      show: role === 'Lecturer',
+      icon: <IconUser className="nav-icon" />
+    },
   ].filter((item) => item.show);
 
   return (

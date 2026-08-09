@@ -1,4 +1,6 @@
+using AcademicAppoinment.DTOs.Lecturers;
 using AcademicAppoinment.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AcademicAppoinment.Controllers
@@ -18,6 +20,22 @@ namespace AcademicAppoinment.Controllers
         public async Task<IActionResult> GetLecturers()
         {
             var result = await _lecturerService.GetLecturersAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("me")]
+        [Authorize(Roles = "Lecturer")]
+        public async Task<IActionResult> GetMyProfile()
+        {
+            var result = await _lecturerService.GetMyProfileAsync(User);
+            return Ok(result);
+        }
+
+        [HttpPut("profile")]
+        [Authorize(Roles = "Lecturer")]
+        public async Task<IActionResult> UpdateMyProfile([FromBody] UpdateLecturerProfileDto dto)
+        {
+            var result = await _lecturerService.UpdateMyProfileAsync(dto, User);
             return Ok(result);
         }
 

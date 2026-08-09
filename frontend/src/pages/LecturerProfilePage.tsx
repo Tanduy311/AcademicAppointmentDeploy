@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import type { StudentDetailDto, UpdateStudentProfileDto, ChangePasswordDto } from '../types/api';
+import type { LecturerDetailDto, UpdateLecturerProfileDto, ChangePasswordDto } from '../types/api';
 import { IconUser, IconBuilding, IconFileText, IconEdit, IconLock } from '../components/Icons';
 
-export function StudentProfilePage() {
-  const [profile, setProfile] = useState<StudentDetailDto | null>(null);
+export function LecturerProfilePage() {
+  const [profile, setProfile] = useState<LecturerDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Edit Profile modal state
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<UpdateStudentProfileDto>({
+  const [editForm, setEditForm] = useState<UpdateLecturerProfileDto>({
     fullName: '',
     phoneNumber: '',
-    major: '',
-    className: '',
-    academicYear: '',
+    department: '',
+    specialization: '',
+    officeLocation: '',
+    consultationDescription: '',
   });
   const [editMessage, setEditMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [submittingEdit, setSubmittingEdit] = useState(false);
@@ -36,15 +37,16 @@ export function StudentProfilePage() {
   const loadProfile = () => {
     setLoading(true);
     api
-      .myStudentProfile()
+      .myLecturerProfile()
       .then((data) => {
         setProfile(data);
         setEditForm({
           fullName: data.fullName || '',
           phoneNumber: data.phoneNumber || '',
-          major: data.major || '',
-          className: data.className || '',
-          academicYear: data.academicYear || '',
+          department: data.department || '',
+          specialization: data.specialization || '',
+          officeLocation: data.officeLocation || '',
+          consultationDescription: data.consultationDescription || '',
         });
       })
       .finally(() => setLoading(false));
@@ -55,9 +57,9 @@ export function StudentProfilePage() {
     setSubmittingEdit(true);
     setEditMessage(null);
     try {
-      const updated = await api.updateStudentProfile(editForm);
+      const updated = await api.updateLecturerProfile(editForm);
       setProfile(updated);
-      setEditMessage({ type: 'success', text: 'Cập nhật thông tin cá nhân thành công!' });
+      setEditMessage({ type: 'success', text: 'Cập nhật thông tin giảng viên thành công!' });
       setTimeout(() => {
         setIsEditing(false);
         setEditMessage(null);
@@ -95,13 +97,13 @@ export function StudentProfilePage() {
   if (loading) {
     return (
       <div className="panel" style={{ textAlign: 'center', padding: 48 }}>
-        <div style={{ color: 'var(--text-secondary)' }}>Đang tải thông tin hồ sơ...</div>
+        <div style={{ color: 'var(--text-secondary)' }}>Đang tải thông tin hồ sơ giảng viên...</div>
       </div>
     );
   }
 
   if (!profile) {
-    return <div className="panel">Không tìm thấy thông tin sinh viên.</div>;
+    return <div className="panel">Không tìm thấy thông tin giảng viên.</div>;
   }
 
   return (
@@ -115,11 +117,11 @@ export function StudentProfilePage() {
           <div>
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 4 }}>
               <h1 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-primary)' }}>{profile.fullName}</h1>
-              <span className="badge badge-success">Sinh viên chính quy</span>
+              <span className="badge badge-success">Giảng viên</span>
             </div>
 
             <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-              <span>Mã SV: <strong style={{ color: 'var(--text-primary)' }}>{profile.studentCode}</strong></span>
+              <span>Mã GV: <strong style={{ color: 'var(--text-primary)' }}>{profile.lecturerCode}</strong></span>
               {profile.emailAddress && <span>• Email: <strong>{profile.emailAddress}</strong></span>}
               {profile.phoneNumber && <span>• SĐT: <strong>{profile.phoneNumber}</strong></span>}
             </div>
@@ -142,55 +144,66 @@ export function StudentProfilePage() {
       <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <IconFileText size={20} style={{ color: 'var(--accent)' }} />
-          <span>Thông Tin Học Tập & Liên Hệ</span>
+          <span>Thông Tin Công Tác & Tư Vấn</span>
         </h2>
 
         <div className="grid-2">
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
               <IconBuilding size={15} />
-              <span>Chuyên Ngành (Major)</span>
+              <span>Khoa / Viện (Department)</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {profile.major || 'Chưa cập nhật'}
+              {profile.department || 'Chưa cập nhật'}
             </div>
           </div>
 
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
               <IconUser size={15} />
-              <span>Lớp Học Phần (Class)</span>
+              <span>Chuyên Môn Nghiên Cứu</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {profile.className || 'Chưa cập nhật'}
+              {profile.specialization || 'Chưa cập nhật'}
             </div>
           </div>
 
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-              Khóa Học (Academic Year)
+              Vị trí Phòng làm việc (Office Location)
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {profile.academicYear || 'Chưa cập nhật'}
+              {profile.officeLocation || 'Chưa cập nhật'}
             </div>
           </div>
 
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-              Số điện thoại
+              Số điện thoại liên hệ
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               {profile.phoneNumber || 'Chưa cập nhật'}
             </div>
           </div>
         </div>
+
+        {profile.consultationDescription && (
+          <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', marginTop: 8 }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 6 }}>
+              Mô tả tư vấn / Lĩnh vực giải đáp cho Sinh viên
+            </div>
+            <div style={{ fontSize: '0.95rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
+              {profile.consultationDescription}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal Chỉnh Sửa Hồ Sơ */}
       {isEditing && (
         <div className="modal-overlay" onClick={() => setIsEditing(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500, width: '90%' }}>
-            <h3 style={{ marginTop: 0, marginBottom: 16 }}>Chỉnh Sửa Hồ Sơ Sinh Viên</h3>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 550, width: '90%' }}>
+            <h3 style={{ marginTop: 0, marginBottom: 16 }}>Chỉnh Sửa Hồ Sơ Giảng Viên</h3>
 
             {editMessage && (
               <div className={`alert alert-${editMessage.type === 'success' ? 'success' : 'danger'}`} style={{ marginBottom: 16 }}>
@@ -221,32 +234,42 @@ export function StudentProfilePage() {
               </div>
 
               <div>
-                <label className="form-label">Chuyên Ngành (Major)</label>
+                <label className="form-label">Khoa / Bộ môn (Department)</label>
                 <input
                   type="text"
                   className="input"
-                  value={editForm.major || ''}
-                  onChange={(e) => setEditForm({ ...editForm, major: e.target.value })}
+                  value={editForm.department || ''}
+                  onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
                 />
               </div>
 
               <div>
-                <label className="form-label">Lớp học phần (Class)</label>
+                <label className="form-label">Chuyên môn (Specialization)</label>
                 <input
                   type="text"
                   className="input"
-                  value={editForm.className || ''}
-                  onChange={(e) => setEditForm({ ...editForm, className: e.target.value })}
+                  value={editForm.specialization || ''}
+                  onChange={(e) => setEditForm({ ...editForm, specialization: e.target.value })}
                 />
               </div>
 
               <div>
-                <label className="form-label">Khóa học (Academic Year)</label>
+                <label className="form-label">Vị trí phòng làm việc (Office Location)</label>
                 <input
                   type="text"
                   className="input"
-                  value={editForm.academicYear || ''}
-                  onChange={(e) => setEditForm({ ...editForm, academicYear: e.target.value })}
+                  value={editForm.officeLocation || ''}
+                  onChange={(e) => setEditForm({ ...editForm, officeLocation: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Mô tả hướng dẫn / Lĩnh vực tư vấn</label>
+                <textarea
+                  className="input"
+                  rows={3}
+                  value={editForm.consultationDescription || ''}
+                  onChange={(e) => setEditForm({ ...editForm, consultationDescription: e.target.value })}
                 />
               </div>
 

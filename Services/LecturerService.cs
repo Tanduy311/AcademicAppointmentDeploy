@@ -64,6 +64,52 @@ namespace AcademicAppoinment.Services
             };
         }
 
+        public async Task<LecturerDetailDto> GetMyProfileAsync(System.Security.Claims.ClaimsPrincipal user)
+        {
+            var userIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin đăng nhập.");
+            }
+
+            var lecturer = await _repository.GetLecturerWithUserByUserIdAsync(userId);
+            if (lecturer == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy thông tin giảng viên.");
+            }
+
+            return await GetLecturerByIdAsync(lecturer.LecturerId);
+        }
+
+        public async Task<LecturerDetailDto> UpdateMyProfileAsync(UpdateLecturerProfileDto dto, System.Security.Claims.ClaimsPrincipal user)
+        {
+            var userIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin đăng nhập.");
+            }
+
+            var lecturer = await _repository.GetLecturerWithUserByUserIdAsync(userId);
+            if (lecturer == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy thông tin giảng viên.");
+            }
+
+            if (lecturer.User != null)
+            {
+                lecturer.User.FullName = dto.FullName;
+                lecturer.User.PhoneNumber = dto.PhoneNumber;
+            }
+
+            lecturer.Department = dto.Department;
+            lecturer.Specialization = dto.Specialization;
+            lecturer.OfficeLocation = dto.OfficeLocation;
+            lecturer.ConsultationDescription = dto.ConsultationDescription;
+
+            await _repository.SaveChangesAsync();
+            return await GetLecturerByIdAsync(lecturer.LecturerId);
+        }
+
         private static SlotResponseDto ToSlotResponseDto(AvailabilitySlot slot)
         {
             return new SlotResponseDto

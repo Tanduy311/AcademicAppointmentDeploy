@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { formatDateTime } from '../utils/format';
-import type { AppointmentResponseDto } from '../types/api';
+import type { AppointmentResponseDto, SlotResponseDto } from '../types/api';
 import { StatusBadge } from '../components/StatusBadge';
+import { AppointmentDetailModal } from '../components/AppointmentDetailModal';
 import {
   IconBookmark,
   IconTeacher,
@@ -12,14 +13,32 @@ import {
   IconClose,
   IconAlert,
   IconFileText,
+  IconEdit,
+  IconClock,
 } from '../components/Icons';
 
 export function StudentAppointmentsPage() {
   const [items, setItems] = useState<AppointmentResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
+
+  // Detail Modal State
+  const [detailItem, setDetailItem] = useState<AppointmentResponseDto | null>(null);
+
+  // Cancel Modal State
   const [cancellingItem, setCancellingItem] = useState<AppointmentResponseDto | null>(null);
   const [reason, setReason] = useState('Em bận đột xuất lịch học trên lớp.');
+
+  // Edit Topic/Description Modal State
+  const [editingItem, setEditingItem] = useState<AppointmentResponseDto | null>(null);
+  const [editTopic, setEditTopic] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+
+  // Reschedule Modal State
+  const [reschedulingItem, setReschedulingItem] = useState<AppointmentResponseDto | null>(null);
+  const [availableSlots, setAvailableSlots] = useState<SlotResponseDto[]>([]);
+  const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -48,6 +67,49 @@ export function StudentAppointmentsPage() {
     }
   };
 
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    setBusyId(editingItem.appointmentId);
+    try {
+      await api.updateAppointment(editingItem.appointmentId, { topic: editTopic, description: editDesc });
+      setEditingItem(null);
+      await load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Không thể cập nhật lịch hẹn.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const openRescheduleModal = async (item: AppointmentResponseDto) => {
+    setReschedulingItem(item);
+    setSelectedSlotId(null);
+    setLoadingSlots(true);
+    try {
+      const slots = await api.slotsByLecturer(item.lecturerId);
+      setAvailableSlots(slots.filter((s) => s.isAvailable));
+    } catch {
+      setAvailableSlots([]);
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  const handleRescheduleSubmit = async () => {
+    if (!reschedulingItem || !selectedSlotId) return;
+    setBusyId(reschedulingItem.appointmentId);
+    try {
+      await api.rescheduleAppointment(reschedulingItem.appointmentId, { newAvailabilitySlotId: selectedSlotId });
+      setReschedulingItem(null);
+      await load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Không thể dời lịch hẹn.');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="panel" style={{ textAlign: 'center', padding: 48 }}>
@@ -64,7 +126,7 @@ export function StudentAppointmentsPage() {
           <span>Lịch Hẹn Của Tôi</span>
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Theo dõi danh sách các buổi tư vấn bạn đã đăng ký với giảng viên.
+          Theo dõi, xem chi tiết và quản lý danh sách các buổi tư vấn bạn đã đăng ký với giảng viên.
         </p>
       </div>
 
@@ -111,20 +173,48 @@ export function StudentAppointmentsPage() {
               </div>
             ) : null}
 
-            {item.status === 'Pending' ? (
-              <div style={{ paddingTop: 8, display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
-                  onClick={() => setCancellingItem(item)}
-                  disabled={busyId === item.appointmentId}
-                >
-                  <IconClose size={15} />
-                  <span>Hủy Lịch Hẹn Này</span>
-                </button>
-              </div>
-            ) : null}
+            <div style={{ paddingTop: 8, display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setDetailItem(item)}
+              >
+                Chi Tiết Lịch Hẹn
+              </button>
+
+              {item.status === 'Pending' && (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      setEditingItem(item);
+                      setEditTopic(item.topic);
+                      setEditDesc(item.description || '');
+                    }}
+                  >
+                    <IconEdit size={14} /> Sửa Nội Dung
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => openRescheduleModal(item)}
+                  >
+                    <IconClock size={14} /> Đổi Khung Giờ
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    onClick={() => setCancellingItem(item)}
+                    disabled={busyId === item.appointmentId}
+                  >
+                    <IconClose size={14} /> Hủy Lịch
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         ))}
 
@@ -135,7 +225,116 @@ export function StudentAppointmentsPage() {
         )}
       </div>
 
-      {/* Cancel Appointment Modal Overlay */}
+      {/* Modal View Detail */}
+      <AppointmentDetailModal
+        appointment={detailItem}
+        onClose={() => setDetailItem(null)}
+      />
+
+      {/* Modal Edit Topic/Description */}
+      {editingItem && (
+        <div className="modal-overlay" onClick={() => setEditingItem(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500, width: '90%' }}>
+            <h3 style={{ marginTop: 0, marginBottom: 16 }}>Chỉnh Sửa Nội Dung Lịch Hẹn</h3>
+            <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div>
+                <label className="form-label">Chủ đề tư vấn</label>
+                <input
+                  type="text"
+                  className="input"
+                  required
+                  value={editTopic}
+                  onChange={(e) => setEditTopic(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Nội dung chi tiết / Câu hỏi gửi Giảng viên</label>
+                <textarea
+                  className="input"
+                  rows={4}
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 12 }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setEditingItem(null)}>Hủy</button>
+                <button type="submit" className="btn btn-primary" disabled={busyId === editingItem.appointmentId}>
+                  {busyId === editingItem.appointmentId ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Reschedule Appointment */}
+      {reschedulingItem && (
+        <div className="modal-overlay" onClick={() => setReschedulingItem(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 550, width: '90%' }}>
+            <h3 style={{ marginTop: 0, marginBottom: 12 }}>Đổi Khung Giờ Tư Vấn</h3>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
+              Chọn một khung giờ rảnh mới của giảng viên <strong>{reschedulingItem.lecturerName}</strong>:
+            </p>
+
+            {loadingSlots ? (
+              <div style={{ padding: 24, textAlign: 'center', color: '#64748b' }}>Đang tải danh sách khung giờ rảnh...</div>
+            ) : availableSlots.length === 0 ? (
+              <div style={{ padding: 16, background: '#f8fafc', borderRadius: 8, color: '#94a3b8', textAlign: 'center' }}>
+                Giảng viên hiện chưa có khung giờ rảnh khả dụng khác.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 250, overflowY: 'auto' }}>
+                {availableSlots.map((slot) => (
+                  <label
+                    key={slot.availabilitySlotId}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '10px 14px',
+                      borderRadius: 8,
+                      border: selectedSlotId === slot.availabilitySlotId ? '2px solid #2563eb' : '1px solid #e2e8f0',
+                      background: selectedSlotId === slot.availabilitySlotId ? '#eff6ff' : '#ffffff',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      name="rescheduleSlot"
+                      checked={selectedSlotId === slot.availabilitySlotId}
+                      onChange={() => setSelectedSlotId(slot.availabilitySlotId)}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                        {formatDateTime(slot.startTime)} - {formatDateTime(slot.endTime)}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                        Hình thức: {slot.meetingType} ({slot.locationOrLink || 'Chưa cập nhật'})
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setReschedulingItem(null)}>Hủy</button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!selectedSlotId || busyId === reschedulingItem.appointmentId}
+                onClick={handleRescheduleSubmit}
+              >
+                {busyId === reschedulingItem.appointmentId ? 'Đang cập nhật...' : 'Xác Nhận Đổi Lịch'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Cancel Appointment */}
       {cancellingItem && (
         <div className="modal-overlay">
           <div className="modal-content">

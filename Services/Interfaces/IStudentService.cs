@@ -8,5 +8,6 @@ namespace AcademicAppoinment.Services.Interfaces
         Task<IReadOnlyList<StudentListItemDto>> GetStudentsAsync();
         Task<StudentDetailDto> GetStudentByIdAsync(int studentId, ClaimsPrincipal user);
         Task<StudentDetailDto> GetMyProfileAsync(ClaimsPrincipal user);
+        Task<StudentDetailDto> UpdateMyProfileAsync(UpdateStudentProfileDto dto, ClaimsPrincipal user);
     }
 }

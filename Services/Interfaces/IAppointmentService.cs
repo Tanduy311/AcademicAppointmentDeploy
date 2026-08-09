@@ -11,5 +11,7 @@ namespace AcademicAppoinment.Services.Interfaces
         Task<IReadOnlyList<AppointmentResponseDto>> GetLecturerAppointmentsAsync(ClaimsPrincipal user);
         Task<AppointmentResponseDto> UpdateAppointmentStatusAsync(int id, UpdateAppointmentStatusDto dto, ClaimsPrincipal user);
         Task<AppointmentResponseDto> CancelAppointmentAsync(int id, CancelAppointmentDto dto, ClaimsPrincipal user);
+        Task<AppointmentResponseDto> UpdateAppointmentAsync(int id, UpdateAppointmentDto dto, ClaimsPrincipal user);
+        Task<AppointmentResponseDto> RescheduleAppointmentAsync(int id, RescheduleAppointmentDto dto, ClaimsPrincipal user);
     }
 }

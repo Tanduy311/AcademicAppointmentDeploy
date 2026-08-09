@@ -181,5 +181,29 @@ namespace AcademicAppoinment.Services
                 LecturerInfo = currentUser.Lecturer
             };
         }
+
+        public async Task<bool> ChangePasswordAsync(ChangePasswordDto dto, ClaimsPrincipal user)
+        {
+            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out var userId))
+            {
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin tài khoản.");
+            }
+
+            var currentUser = await _repository.GetUserWithDetailsByIdAsync(userId);
+            if (currentUser == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy người dùng.");
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(dto.OldPassword, currentUser.PasswordHash))
+            {
+                throw new ArgumentException("Mật khẩu hiện tại không chính xác.");
+            }
+
+            currentUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            await _repository.SaveChangesAsync();
+            return true;
+        }
     }
 }

@@ -63,6 +63,22 @@ namespace AcademicAppoinment.Controllers
             var result = await _appointmentService.CancelAppointmentAsync(id, dto, User);
             return Ok(result);
         }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> UpdateAppointment(int id, [FromBody] UpdateAppointmentDto dto)
+        {
+            var result = await _appointmentService.UpdateAppointmentAsync(id, dto, User);
+            return Ok(result);
+        }
+
+        [HttpPut("{id}/reschedule")]
+        [Authorize]
+        public async Task<IActionResult> RescheduleAppointment(int id, [FromBody] RescheduleAppointmentDto dto)
+        {
+            var result = await _appointmentService.RescheduleAppointmentAsync(id, dto, User);
+            return Ok(result);
+        }
     }
 }
 

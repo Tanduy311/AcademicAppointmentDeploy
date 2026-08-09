@@ -249,6 +249,110 @@ namespace AcademicAppoinment.Services
             return ToAppointmentResponseDto(appointment);
         }
 
+        public async Task<AppointmentResponseDto> UpdateAppointmentAsync(int id, UpdateAppointmentDto dto, ClaimsPrincipal user)
+        {
+            var student = await GetCurrentStudentAsync(user);
+            if (student == null)
+            {
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin sinh viên.");
+            }
+
+            var appointment = await _repository.GetAppointmentDetailByIdAsync(id);
+            if (appointment == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy lịch hẹn.");
+            }
+
+            if (appointment.StudentId != student.StudentId)
+            {
+                throw new ForbiddenAccessException("Bạn không có quyền chỉnh sửa lịch hẹn này.");
+            }
+
+            if (!string.Equals(appointment.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("Chỉ có thể chỉnh sửa nội dung lịch hẹn khi ở trạng thái Chờ duyệt (Pending).");
+            }
+
+            appointment.Topic = dto.Topic;
+            appointment.Description = dto.Description;
+            appointment.UpdatedAt = DateTime.Now;
+
+            await _repository.SaveChangesAsync();
+            return ToAppointmentResponseDto(appointment);
+        }
+
+        public async Task<AppointmentResponseDto> RescheduleAppointmentAsync(int id, RescheduleAppointmentDto dto, ClaimsPrincipal user)
+        {
+            var appointment = await _repository.GetAppointmentDetailByIdAsync(id);
+            if (appointment == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy lịch hẹn.");
+            }
+
+            if (!CanAccessAppointment(appointment, user))
+            {
+                throw new ForbiddenAccessException("Bạn không có quyền đổi lịch hẹn này.");
+            }
+
+            var newSlot = await _repository.GetAvailabilitySlotWithLecturerAsync(dto.NewAvailabilitySlotId);
+            if (newSlot == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy khung giờ rảnh mới.");
+            }
+
+            if (newSlot.LecturerId != appointment.LecturerId)
+            {
+                throw new ArgumentException("Khung giờ rảnh mới phải thuộc cùng giảng viên của lịch hẹn này.");
+            }
+
+            if (!newSlot.IsAvailable)
+            {
+                throw new ArgumentException("Khung giờ rảnh này đã được người khác đặt.");
+            }
+
+            if (newSlot.StartTime <= DateTime.Now)
+            {
+                throw new ArgumentException("Không thể chọn khung giờ rảnh trong quá khứ.");
+            }
+
+            await using var transaction = await _context.Database.BeginTransactionAsync();
+
+            if (appointment.AvailabilitySlot != null)
+            {
+                appointment.AvailabilitySlot.IsAvailable = true;
+            }
+
+            newSlot.IsAvailable = false;
+            appointment.AvailabilitySlotId = newSlot.AvailabilitySlotId;
+            appointment.Status = "Pending";
+            appointment.UpdatedAt = DateTime.Now;
+
+            // Notify lecturer/student
+            var isStudent = appointment.Student?.UserId.ToString() == user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var targetUserId = isStudent ? appointment.Lecturer?.UserId : appointment.Student?.UserId;
+
+            if (targetUserId.HasValue)
+            {
+                _repository.AddNotification(new Notification
+                {
+                    UserId = targetUserId.Value,
+                    StudentId = appointment.StudentId,
+                    LecturerId = appointment.LecturerId,
+                    AppointmentId = appointment.AppointmentId,
+                    Title = "Lịch hẹn đã được dời lịch",
+                    Message = $"Lịch hẹn chủ đề '{appointment.Topic}' đã được yêu cầu đổi sang khung giờ mới ({newSlot.StartTime:dd/MM/yyyy HH:mm}).",
+                    IsRead = false,
+                    CreatedAt = DateTime.Now
+                });
+            }
+
+            await _repository.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            var updated = await _repository.GetAppointmentDetailByIdAsync(appointment.AppointmentId);
+            return ToAppointmentResponseDto(updated ?? appointment);
+        }
+
         private async Task<Student?> GetCurrentStudentAsync(ClaimsPrincipal user)
         {
             var studentIdClaim = user.FindFirst("StudentId")?.Value;
