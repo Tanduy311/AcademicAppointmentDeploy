@@ -6,6 +6,7 @@ export interface AuthResponseDto {
   accountName: string;
   fullName: string;
   emailAddress: string;
+  avatarUrl?: string | null;
   roleName: string;
   studentId?: number | null;
   lecturerId?: number | null;
@@ -17,6 +18,7 @@ export interface CurrentUserResponseDto {
   fullName: string;
   emailAddress: string;
   phoneNumber?: string | null;
+  avatarUrl?: string | null;
   roleName?: string | null;
   studentInfo?: StudentInfo | null;
   lecturerInfo?: LecturerInfo | null;
@@ -106,6 +108,7 @@ export interface StudentListItemDto {
   fullName: string;
   emailAddress: string;
   phoneNumber?: string | null;
+  avatarUrl?: string | null;
   major?: string | null;
   className?: string | null;
   academicYear?: string | null;

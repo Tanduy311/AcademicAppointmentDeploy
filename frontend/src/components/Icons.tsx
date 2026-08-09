@@ -173,3 +173,11 @@ export function IconFileText({ size = 18, ...props }: IconProps) {
     </svg>
   );
 }
+
+export function IconUpload({ size = 18, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 16V4m0 0l-4 4m4-4l4 4" />
+    </svg>
+  );
+}

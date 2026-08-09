@@ -117,8 +117,16 @@ export function AppShell() {
           </div>
 
           <div className="user-card-mini">
-            <div className="avatar-circle">
-              {user?.fullName?.charAt(0).toUpperCase() || 'U'}
+            <div className="avatar-circle" style={{ overflow: 'hidden', background: user?.avatarUrl ? '#fff' : undefined }}>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.fullName || 'Avatar'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                user?.fullName?.charAt(0).toUpperCase() || 'U'
+              )}
             </div>
             <div style={{ minWidth: 0 }}>
               <div className="user-info-name">{user?.fullName || 'User'}</div>

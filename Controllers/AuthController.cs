@@ -44,6 +44,15 @@ namespace AcademicAppoinment.Controllers
             var result = await _authService.GetCurrentUserAsync(User);
             return Ok(result);
         }
+
+        [HttpPut("me/avatar")]
+        [Authorize]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateMyAvatar([FromForm] IFormFile avatar)
+        {
+            var result = await _authService.UpdateMyAvatarAsync(avatar, User);
+            return Ok(result);
+        }
     }
 }
 

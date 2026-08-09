@@ -40,6 +40,14 @@ export const api = {
       body: JSON.stringify(dto),
     }),
   me: () => request<CurrentUserResponseDto>('/api/auth/me'),
+  updateMyAvatar: (file: File) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return request<CurrentUserResponseDto>('/api/auth/me/avatar', {
+      method: 'PUT',
+      body: formData,
+    });
+  },
 
   lecturers: () => request<LecturerListItemDto[]>('/api/lecturers'),
   lecturerById: (lecturerId: number) =>

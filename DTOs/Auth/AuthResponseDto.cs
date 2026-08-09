@@ -7,6 +7,7 @@ namespace AcademicAppoinment.DTOs.Auth
         public string AccountName { get; set; } = null!;
         public string FullName { get; set; } = null!;
         public string EmailAddress { get; set; } = null!;
+        public string? AvatarUrl { get; set; }
         public string RoleName { get; set; } = null!;
         public int? StudentId { get; set; }
         public int? LecturerId { get; set; }

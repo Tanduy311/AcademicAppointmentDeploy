@@ -140,6 +140,7 @@ namespace AcademicAppoinment.Services
                 FullName = student.User?.FullName ?? "",
                 EmailAddress = student.User?.EmailAddress ?? "",
                 PhoneNumber = student.User?.PhoneNumber,
+                AvatarUrl = student.User?.AvatarUrl,
                 Major = student.Major,
                 ClassName = student.ClassName,
                 AcademicYear = student.AcademicYear,

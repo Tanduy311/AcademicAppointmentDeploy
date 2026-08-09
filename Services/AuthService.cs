@@ -13,12 +13,18 @@ namespace AcademicAppoinment.Services
         private readonly IAppRepository _repository;
         private readonly JwtTokenHelper _jwtTokenHelper;
         private readonly AppDbContext _context;
+        private readonly IAvatarStorageService? _avatarStorageService;
 
-        public AuthService(IAppRepository repository, JwtTokenHelper jwtTokenHelper, AppDbContext context)
+        public AuthService(
+            IAppRepository repository,
+            JwtTokenHelper jwtTokenHelper,
+            AppDbContext context,
+            IAvatarStorageService? avatarStorageService = null)
         {
             _repository = repository;
             _jwtTokenHelper = jwtTokenHelper;
             _context = context;
+            _avatarStorageService = avatarStorageService;
         }
 
         public async Task<AuthResponseDto> RegisterStudentAsync(RegisterStudentDto dto)
@@ -77,6 +83,7 @@ namespace AcademicAppoinment.Services
                 AccountName = user.AccountName,
                 FullName = user.FullName,
                 EmailAddress = user.EmailAddress,
+                AvatarUrl = user.AvatarUrl,
                 RoleName = "Student",
                 StudentId = student.StudentId
             };
@@ -139,6 +146,7 @@ namespace AcademicAppoinment.Services
                 AccountName = user.AccountName,
                 FullName = user.FullName,
                 EmailAddress = user.EmailAddress,
+                AvatarUrl = user.AvatarUrl,
                 RoleName = "Lecturer",
                 LecturerId = lecturer.LecturerId
             };
@@ -170,6 +178,7 @@ namespace AcademicAppoinment.Services
                 AccountName = user.AccountName,
                 FullName = user.FullName,
                 EmailAddress = user.EmailAddress,
+                AvatarUrl = user.AvatarUrl,
                 RoleName = roleName,
                 StudentId = studentId,
                 LecturerId = lecturerId
@@ -197,10 +206,88 @@ namespace AcademicAppoinment.Services
                 FullName = currentUser.FullName,
                 EmailAddress = currentUser.EmailAddress,
                 PhoneNumber = currentUser.PhoneNumber,
+                AvatarUrl = currentUser.AvatarUrl,
                 RoleName = currentUser.Role?.RoleName,
                 StudentInfo = currentUser.Student,
                 LecturerInfo = currentUser.Lecturer
             };
+        }
+
+        public async Task<CurrentUserResponseDto> UpdateMyAvatarAsync(IFormFile avatar, ClaimsPrincipal user)
+        {
+            if (_avatarStorageService == null)
+            {
+                throw new InvalidOperationException("Avatar storage service is not configured.");
+            }
+
+            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                throw new UnauthorizedAccessException();
+            }
+
+            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (currentUser == null)
+            {
+                throw new KeyNotFoundException("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng.");
+            }
+
+            var oldBlobName = currentUser.AvatarBlobName;
+            var upload = await _avatarStorageService.UploadAvatarAsync(avatar);
+
+            currentUser.AvatarUrl = upload.AvatarUrl;
+            currentUser.AvatarBlobName = upload.AvatarBlobName;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                await SafeDeleteAvatarAsync(upload.AvatarBlobName);
+                throw;
+            }
+
+            if (!string.IsNullOrWhiteSpace(oldBlobName) && !string.Equals(oldBlobName, upload.AvatarBlobName, StringComparison.OrdinalIgnoreCase))
+            {
+                await SafeDeleteAvatarAsync(oldBlobName);
+            }
+
+            var refreshed = await _repository.GetUserWithDetailsByIdAsync(userId);
+            if (refreshed == null)
+            {
+                throw new KeyNotFoundException("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng.");
+            }
+
+            return new CurrentUserResponseDto
+            {
+                UserId = refreshed.UserId,
+                AccountName = refreshed.AccountName,
+                FullName = refreshed.FullName,
+                EmailAddress = refreshed.EmailAddress,
+                PhoneNumber = refreshed.PhoneNumber,
+                AvatarUrl = refreshed.AvatarUrl,
+                RoleName = refreshed.Role?.RoleName,
+                StudentInfo = refreshed.Student,
+                LecturerInfo = refreshed.Lecturer
+            };
+        }
+
+        private async Task SafeDeleteAvatarAsync(string? blobName)
+        {
+            if (_avatarStorageService == null || string.IsNullOrWhiteSpace(blobName))
+            {
+                return;
+            }
+
+            try
+            {
+                await _avatarStorageService.DeleteAvatarAsync(blobName);
+            }
+            catch
+            {
+                // Best effort cleanup.
+            }
         }
     }
 }

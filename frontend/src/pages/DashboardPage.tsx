@@ -1,5 +1,7 @@
+import { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 import {
   IconTeacher,
   IconCalendar,
@@ -12,18 +14,48 @@ import {
   IconUser,
   IconMail,
   IconPhone,
+  IconUpload,
 } from '../components/Icons';
 
 export function DashboardPage() {
-  const { user } = useAuth();
+  const { user, refreshMe } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const role = user?.roleName;
+
+  async function handleAvatarChange(file: File | null) {
+    if (!file) return;
+    setUploading(true);
+    setUploadError(null);
+    try {
+      await api.updateMyAvatar(file);
+      await refreshMe();
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Upload avatar thất bại.');
+    } finally {
+      setUploading(false);
+    }
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Welcome Banner Panel */}
       <div className="panel" style={{ background: 'linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%)', borderColor: '#bfdbfe' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            <div className="avatar-circle" style={{ width: 72, height: 72, fontSize: '1.5rem', overflow: 'hidden', background: user?.avatarUrl ? '#fff' : undefined }}>
+              {user?.avatarUrl ? (
+                <img
+                  src={user.avatarUrl}
+                  alt={user.fullName || 'Avatar'}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                user?.fullName?.charAt(0).toUpperCase() || 'U'
+              )}
+            </div>
+            <div>
             <div className="pill-role" style={{ marginBottom: 10, display: 'inline-block' }}>{role} PORTAL</div>
             <h1 style={{ fontSize: '1.75rem', fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
               Xin chào, {user?.fullName || 'Người dùng'}
@@ -31,9 +63,36 @@ export function DashboardPage() {
             <p style={{ color: 'var(--text-secondary)', marginTop: 4, fontSize: '0.95rem' }}>
               Chào mừng bạn đến với Cổng quản lý lịch hẹn tư vấn học thuật khoa Công Nghệ Thông Tin.
             </p>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0] ?? null;
+                void handleAvatarChange(file);
+                e.currentTarget.value = '';
+              }}
+            />
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              <IconUpload size={16} />
+              <span>{uploading ? 'Đang tải...' : 'Đổi Avatar'}</span>
+            </button>
+            {uploadError && (
+              <div style={{ width: '100%', color: 'var(--danger)', fontSize: '0.85rem' }}>
+                {uploadError}
+              </div>
+            )}
             {role === 'Student' && (
               <Link to="/app/lecturers" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <IconSearch size={16} />

@@ -17,6 +17,12 @@ namespace AcademicAppoinment.Models
         [MaxLength(20)]
         public string? PhoneNumber { get; set; }
 
+        [MaxLength(500)]
+        public string? AvatarUrl { get; set; }
+
+        [MaxLength(200)]
+        public string? AvatarBlobName { get; set; }
+
         [EmailAddress]
         [Required]
         public required string EmailAddress { get; set; }
