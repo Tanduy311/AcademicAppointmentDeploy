@@ -37,7 +37,7 @@ namespace AcademicAppoinment.Middlewares
                 UnauthorizedAccessException => (HttpStatusCode.Unauthorized, string.IsNullOrWhiteSpace(exception.Message) ? "Bạn không có quyền truy cập." : exception.Message),
                 ForbiddenAccessException => (HttpStatusCode.Forbidden, exception.Message),
                 KeyNotFoundException => (HttpStatusCode.NotFound, exception.Message),
-                _ => (HttpStatusCode.InternalServerError, "Đã xảy ra lỗi không xác định.")
+                _ => (HttpStatusCode.InternalServerError, $"Lỗi hệ thống: {exception.Message}{(exception.InnerException != null ? " | Inner: " + exception.InnerException.Message : "")}")
             };
 
             context.Response.StatusCode = (int)statusCode;
