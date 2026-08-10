@@ -164,27 +164,33 @@ namespace AcademicAppoinment.Services
                 throw new ForbiddenAccessException("Bạn không có quyền cập nhật lịch hẹn này.");
             }
 
-            if (!string.Equals(appointment.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(appointment.Status, "Pending", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(appointment.Status, "Confirmed", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(appointment.Status, "Approved", StringComparison.OrdinalIgnoreCase))
             {
-                throw new ArgumentException("Chỉ có thể cập nhật lịch hẹn đang ở trạng thái Pending.");
+                throw new ArgumentException("Chỉ có thể cập nhật lịch hẹn đang ở trạng thái Pending hoặc Confirmed.");
             }
 
             var normalizedStatus = NormalizeAppointmentStatus(dto.Status);
-            if (normalizedStatus != "Confirmed" && normalizedStatus != "Rejected")
+            if (normalizedStatus != "Confirmed" && normalizedStatus != "Rejected" && normalizedStatus != "Cancelled")
             {
-                throw new ArgumentException("Status chỉ được là Confirmed hoặc Rejected.");
+                throw new ArgumentException("Status chỉ được là Confirmed, Rejected hoặc Cancelled.");
             }
 
-            if (normalizedStatus == "Rejected" && string.IsNullOrWhiteSpace(dto.LecturerResponse))
+            if ((normalizedStatus == "Rejected" || normalizedStatus == "Cancelled") && string.IsNullOrWhiteSpace(dto.LecturerResponse))
             {
-                throw new ArgumentException("Vui lòng nhập lý do từ chối lịch hẹn.");
+                throw new ArgumentException("Vui lòng nhập lý do từ chối/hủy lịch hẹn.");
             }
 
             appointment.Status = normalizedStatus;
             appointment.LecturerResponse = dto.LecturerResponse;
+            if (normalizedStatus == "Cancelled")
+            {
+                appointment.CancellationReason = dto.LecturerResponse;
+            }
             appointment.UpdatedAt = DateTime.Now;
 
-            if (normalizedStatus == "Rejected" && appointment.AvailabilitySlot != null)
+            if ((normalizedStatus == "Rejected" || normalizedStatus == "Cancelled") && appointment.AvailabilitySlot != null)
             {
                 appointment.AvailabilitySlot.IsAvailable = true;
             }
@@ -197,9 +203,13 @@ namespace AcademicAppoinment.Services
                 AppointmentId = appointment.AppointmentId,
                 Title = normalizedStatus == "Confirmed"
                     ? "Lịch hẹn đã được xác nhận"
+                    : normalizedStatus == "Cancelled"
+                    ? "Lịch hẹn đã bị hủy bởi giảng viên"
                     : "Lịch hẹn đã bị từ chối",
                 Message = normalizedStatus == "Confirmed"
                     ? $"Lịch tư vấn về chủ đề '{appointment.Topic}' đã được giảng viên xác nhận."
+                    : normalizedStatus == "Cancelled"
+                    ? $"Lịch tư vấn về chủ đề '{appointment.Topic}' đã bị hủy bởi giảng viên. Lời nhắn: {dto.LecturerResponse}"
                     : $"Lịch tư vấn về chủ đề '{appointment.Topic}' đã bị từ chối. Phản hồi: {dto.LecturerResponse}",
                 IsRead = false,
                 CreatedAt = DateTime.Now

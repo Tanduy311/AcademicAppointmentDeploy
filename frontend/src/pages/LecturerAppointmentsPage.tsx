@@ -21,7 +21,7 @@ export function LecturerAppointmentsPage() {
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
   const [busyId, setBusyId] = useState<number | null>(null);
   const [activeItem, setActiveItem] = useState<AppointmentResponseDto | null>(null);
-  const [actionType, setActionType] = useState<'Approved' | 'Rejected'>('Approved');
+  const [actionType, setActionType] = useState<'Approved' | 'Rejected' | 'Cancelled'>('Approved');
   const [responseMsg, setResponseMsg] = useState('Thầy đồng ý phê duyệt lịch hẹn, em đến đúng giờ nhé.');
 
   const load = async () => {
@@ -56,12 +56,18 @@ export function LecturerAppointmentsPage() {
     setResponseMsg(status === 'Approved' ? 'Thầy đồng ý phê duyệt lịch hẹn, em đến đúng giờ nhé.' : 'Thầy bận lịch họp đột xuất, em đăng ký lại khung giờ khác giúp thầy nhé.');
   };
 
+  const openCancelModal = (item: AppointmentResponseDto) => {
+    setActiveItem(item);
+    setActionType('Cancelled');
+    setResponseMsg('Thầy bận lịch đột xuất nên xin phép hủy lịch hẹn này, em thông cảm nhé.');
+  };
+
   const handleDecisionSubmit = async () => {
     if (!activeItem) return;
     setBusyId(activeItem.appointmentId);
     try {
       await api.updateAppointmentStatus(activeItem.appointmentId, {
-        status: actionType === 'Approved' ? 'Confirmed' : 'Rejected',
+        status: actionType === 'Approved' ? 'Confirmed' : actionType === 'Cancelled' ? 'Cancelled' : 'Rejected',
         lecturerResponse: responseMsg,
       });
       setActiveItem(null);
@@ -243,6 +249,19 @@ export function LecturerAppointmentsPage() {
                   <span>Phê Duyệt Lịch Hẹn</span>
                 </button>
               </div>
+            ) : (item.status === 'Confirmed' || item.status === 'Approved') && activeTab === 'current' ? (
+              <div style={{ paddingTop: 8, display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  onClick={() => openCancelModal(item)}
+                  disabled={busyId === item.appointmentId}
+                >
+                  <IconClose size={15} />
+                  <span>Hủy Lịch Hẹn Này</span>
+                </button>
+              </div>
             ) : null}
           </div>
         ))}
@@ -274,6 +293,11 @@ export function LecturerAppointmentsPage() {
                   <IconCheck size={20} style={{ color: 'var(--success)' }} />
                   <span>Phê Duyệt Lịch Hẹn</span>
                 </>
+              ) : actionType === 'Cancelled' ? (
+                <>
+                  <IconClose size={20} style={{ color: '#dc2626' }} />
+                  <span>Hủy Lịch Hẹn Đã Duyệt</span>
+                </>
               ) : (
                 <>
                   <IconClose size={20} style={{ color: 'var(--danger)' }} />
@@ -282,11 +306,11 @@ export function LecturerAppointmentsPage() {
               )}
             </h2>
             <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: 16 }}>
-              Yêu cầu tư vấn: <strong>"{activeItem.topic}"</strong> của SV {activeItem.studentName}.
+              Lịch tư vấn: <strong>"{activeItem.topic}"</strong> của SV {activeItem.studentName}.
             </p>
 
             <label className="field" style={{ marginBottom: 20 }}>
-              <span>Lời nhắn phản hồi gửi tới Sinh viên:</span>
+              <span>{actionType === 'Cancelled' ? 'Lý do hủy lịch gửi tới Sinh viên:' : 'Lời nhắn phản hồi gửi tới Sinh viên:'}</span>
               <textarea
                 rows={3}
                 value={responseMsg}
@@ -305,7 +329,7 @@ export function LecturerAppointmentsPage() {
                 onClick={handleDecisionSubmit}
                 disabled={busyId === activeItem.appointmentId}
               >
-                {busyId === activeItem.appointmentId ? 'Đang lưu...' : actionType === 'Approved' ? 'Xác Nhận Duyệt' : 'Xác Nhận Từ Chối'}
+                {busyId === activeItem.appointmentId ? 'Đang lưu...' : actionType === 'Approved' ? 'Xác Nhận Duyệt' : actionType === 'Cancelled' ? 'Xác Nhận Hủy' : 'Xác Nhận Từ Chối'}
               </button>
             </div>
           </div>
