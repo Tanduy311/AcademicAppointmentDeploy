@@ -21,6 +21,9 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      - name: Restore dependencies
+        run: dotnet restore AcademicAppoinment.csproj
+
       - name: Install EF Core CLI
         run: dotnet tool install --global dotnet-ef
 
