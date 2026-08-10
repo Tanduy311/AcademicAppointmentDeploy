@@ -17,6 +17,7 @@ import {
 export function LecturerAppointmentsPage() {
   const [items, setItems] = useState<AppointmentResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
   const [busyId, setBusyId] = useState<number | null>(null);
   const [activeItem, setActiveItem] = useState<AppointmentResponseDto | null>(null);
   const [actionType, setActionType] = useState<'Approved' | 'Rejected'>('Approved');
@@ -34,6 +35,19 @@ export function LecturerAppointmentsPage() {
   useEffect(() => {
     load();
   }, []);
+
+  // Categorize into Current vs History
+  const currentItems = items.filter((item) => {
+    const isPast = new Date(item.endTime).getTime() < Date.now();
+    return (item.status === 'Pending' || item.status === 'Confirmed' || item.status === 'Approved') && !isPast;
+  });
+
+  const historyItems = items.filter((item) => {
+    const isPast = new Date(item.endTime).getTime() < Date.now();
+    return item.status === 'Cancelled' || item.status === 'Rejected' || isPast;
+  });
+
+  const displayItems = activeTab === 'current' ? currentItems : historyItems;
 
   const openDecisionModal = (item: AppointmentResponseDto, status: 'Approved' | 'Rejected') => {
     setActiveItem(item);
@@ -67,19 +81,94 @@ export function LecturerAppointmentsPage() {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      <div className="panel">
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <IconFileText size={24} style={{ color: 'var(--accent)' }} />
-          <span>Hàng Đợi Duyệt Lịch Hẹn</span>
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-          Quản lý các yêu cầu tư vấn học thuật do sinh viên gửi đến cho bạn.
-        </p>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      {/* Header & Tabs */}
+      <div className="panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <IconFileText size={24} style={{ color: 'var(--accent)' }} />
+            <span>Hàng Đợi Duyệt Lịch Hẹn</span>
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+            Quản lý các yêu cầu tư vấn học thuật do sinh viên gửi đến cho bạn.
+          </p>
+        </div>
+
+        {/* Tab Navigation */}
+        <div style={{ display: 'inline-flex', background: '#f1f5f9', padding: 4, borderRadius: 'var(--radius-md)', gap: 4 }}>
+          <button
+            type="button"
+            className="btn"
+            style={{
+              fontSize: '0.88rem',
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-sm)',
+              border: 'none',
+              background: activeTab === 'current' ? '#fff' : 'transparent',
+              color: activeTab === 'current' ? 'var(--accent)' : 'var(--text-secondary)',
+              fontWeight: activeTab === 'current' ? 700 : 500,
+              boxShadow: activeTab === 'current' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.15s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+            onClick={() => setActiveTab('current')}
+          >
+            <span>📅 Yêu Cầu Cần Duyệt & Hiện Tại</span>
+            <span
+              style={{
+                background: activeTab === 'current' ? 'var(--accent)' : '#cbd5e1',
+                color: '#fff',
+                borderRadius: 12,
+                padding: '2px 8px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+              }}
+            >
+              {currentItems.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="btn"
+            style={{
+              fontSize: '0.88rem',
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-sm)',
+              border: 'none',
+              background: activeTab === 'history' ? '#fff' : 'transparent',
+              color: activeTab === 'history' ? 'var(--text-primary)' : 'var(--text-secondary)',
+              fontWeight: activeTab === 'history' ? 700 : 500,
+              boxShadow: activeTab === 'history' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.15s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+            onClick={() => setActiveTab('history')}
+          >
+            <span>📜 Lịch Sử & Đã Hủy</span>
+            <span
+              style={{
+                background: activeTab === 'history' ? '#64748b' : '#cbd5e1',
+                color: '#fff',
+                borderRadius: 12,
+                padding: '2px 8px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+              }}
+            >
+              {historyItems.length}
+            </span>
+          </button>
+        </div>
       </div>
 
+      {/* Appointment Cards List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {items.map((item) => (
+        {displayItems.map((item) => (
           <div key={item.appointmentId} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
               <div>
@@ -121,6 +210,13 @@ export function LecturerAppointmentsPage() {
               </div>
             ) : null}
 
+            {item.cancellationReason ? (
+              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: 12, borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: '#dc2626', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                <IconChat size={16} style={{ marginTop: 2, flexShrink: 0 }} />
+                <span><strong>Lý do sinh viên hủy lịch:</strong> {item.cancellationReason}</span>
+              </div>
+            ) : null}
+
             {item.status === 'Pending' ? (
               <div style={{ paddingTop: 8, display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                 <button
@@ -148,9 +244,19 @@ export function LecturerAppointmentsPage() {
           </div>
         ))}
 
-        {items.length === 0 && (
-          <div className="panel" style={{ textAlign: 'center', padding: 36, color: 'var(--text-muted)' }}>
-            Hiện tại không có lịch hẹn nào đang chờ xử lý.
+        {displayItems.length === 0 && (
+          <div className="panel" style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
+            {activeTab === 'current' ? (
+              <div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Không có yêu cầu tư vấn nào mới</div>
+                <div style={{ fontSize: '0.85rem' }}>Hiện tại không có lịch hẹn mới nào cần bạn xử lý phê duyệt.</div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Chưa có lịch sử yêu cầu cũ</div>
+                <div style={{ fontSize: '0.85rem' }}>Các cuộc hẹn đã hoàn thành hoặc bị từ chối/hủy sẽ lưu tại đây.</div>
+              </div>
+            )}
           </div>
         )}
       </div>
