@@ -12,6 +12,7 @@ import {
   IconChat,
   IconCheck,
   IconClose,
+  IconHistory,
 } from '../components/Icons';
 
 export function LecturerAppointmentsPage() {
@@ -115,7 +116,8 @@ export function LecturerAppointmentsPage() {
             }}
             onClick={() => setActiveTab('current')}
           >
-            <span>📅 Yêu Cầu Cần Duyệt & Hiện Tại</span>
+            <IconCalendar size={16} style={{ color: activeTab === 'current' ? 'var(--accent)' : 'var(--text-muted)' }} />
+            <span>Yêu Cầu Cần Duyệt & Hiện Tại</span>
             <span
               style={{
                 background: activeTab === 'current' ? 'var(--accent)' : '#cbd5e1',
@@ -149,7 +151,8 @@ export function LecturerAppointmentsPage() {
             }}
             onClick={() => setActiveTab('history')}
           >
-            <span>📜 Lịch Sử & Đã Hủy</span>
+            <IconHistory size={16} style={{ color: activeTab === 'history' ? 'var(--text-primary)' : 'var(--text-muted)' }} />
+            <span>Lịch Sử & Đã Hủy</span>
             <span
               style={{
                 background: activeTab === 'history' ? '#64748b' : '#cbd5e1',

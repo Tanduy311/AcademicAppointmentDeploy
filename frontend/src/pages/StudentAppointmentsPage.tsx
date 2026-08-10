@@ -14,6 +14,7 @@ import {
   IconArrowRight,
   IconAlert,
   IconCheck,
+  IconHistory,
 } from '../components/Icons';
 
 export function StudentAppointmentsPage() {
@@ -133,7 +134,8 @@ export function StudentAppointmentsPage() {
             }}
             onClick={() => setActiveTab('current')}
           >
-            <span>📅 Cuộc Hẹn Hiện Tại</span>
+            <IconCalendar size={16} style={{ color: activeTab === 'current' ? 'var(--accent)' : 'var(--text-muted)' }} />
+            <span>Cuộc Hẹn Hiện Tại</span>
             <span
               style={{
                 background: activeTab === 'current' ? 'var(--accent)' : '#cbd5e1',
@@ -167,7 +169,8 @@ export function StudentAppointmentsPage() {
             }}
             onClick={() => setActiveTab('history')}
           >
-            <span>📜 Lịch Sử Cuộc Hẹn</span>
+            <IconHistory size={16} style={{ color: activeTab === 'history' ? 'var(--text-primary)' : 'var(--text-muted)' }} />
+            <span>Lịch Sử Cuộc Hẹn</span>
             <span
               style={{
                 background: activeTab === 'history' ? '#64748b' : '#cbd5e1',
