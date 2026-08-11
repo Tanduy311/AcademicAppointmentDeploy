@@ -27,6 +27,35 @@ jobs:
       - name: Install EF Core CLI
         run: dotnet tool install --global dotnet-ef
 
+      - name: Test Database TCP Connection
+        env:
+          DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+        run: |
+          if [ -z "$DB_CONNECTION_STRING" ]; then
+            echo "DB_CONNECTION_STRING secret is empty or missing."
+            exit 1
+          fi
+
+          db_server="$(printf '%s' "$DB_CONNECTION_STRING" | tr ';' '\n' | awk -F= 'tolower($1) == "server" || tolower($1) == "data source" { print $2; exit }')"
+          db_server="${db_server#tcp:}"
+          db_port="1433"
+
+          if printf '%s' "$db_server" | grep -q ','; then
+            db_port="${db_server##*,}"
+            db_server="${db_server%%,*}"
+          fi
+
+          if [ -z "$db_server" ]; then
+            echo "Could not parse SQL Server host from DB_CONNECTION_STRING."
+            exit 1
+          fi
+
+          echo "Testing TCP access to SQL Server host on port $db_port..."
+          timeout 15 bash -c "cat < /dev/null > /dev/tcp/$db_server/$db_port" || {
+            echo "Cannot reach SQL Server TCP port. Check MonsterASP remote access, firewall, server host, and port."
+            exit 1
+          }
+
       - name: Apply Database Migrations
         env:
           DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
