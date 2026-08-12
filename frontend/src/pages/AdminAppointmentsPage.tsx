@@ -36,10 +36,6 @@ export function AdminAppointmentsPage() {
     [appointments]
   );
 
-  const currentCount = appointments.filter(isCurrentAppointment).length;
-  const pendingCount = appointments.filter((item) => item.status.toLowerCase() === 'pending').length;
-  const confirmedCount = appointments.filter((item) => ['confirmed', 'approved'].includes(item.status.toLowerCase())).length;
-
   const filteredAppointments = appointments.filter((item) => {
     const query = searchQuery.trim().toLowerCase();
     const matchesSearch =
@@ -80,12 +76,6 @@ export function AdminAppointmentsPage() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <span className="badge badge-neutral">Tổng: {appointments.length}</span>
-            <span className="badge badge-success">Đang hiệu lực: {currentCount}</span>
-            <span className="badge badge-warning">Chờ duyệt: {pendingCount}</span>
-            <span className="badge badge-approved">Đã duyệt: {confirmedCount}</span>
-          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 1fr) repeat(3, minmax(160px, 220px))', gap: 14, alignItems: 'end' }}>
