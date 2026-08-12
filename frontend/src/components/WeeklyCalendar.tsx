@@ -160,12 +160,21 @@ export function WeeklyCalendar({
           <div className="weekly-calendar-corner">
             <span>Thời gian</span>
           </div>
-          {days.map((day, index) => (
-            <div key={day.toISOString()} className="weekly-calendar-day-header">
-              <span>{dayLabels[index]}</span>
-              <strong>{formatShortDate(day)}</strong>
-            </div>
-          ))}
+          {days.map((day, index) => {
+            const isToday = sameDay(day, new Date());
+            return (
+              <div
+                key={day.toISOString()}
+                className={`weekly-calendar-day-header ${isToday ? 'weekly-calendar-day-header-today' : ''}`}
+              >
+                <div className="weekly-calendar-day-name">{dayLabels[index]}</div>
+                <div className="weekly-calendar-day-number">
+                  <span>{formatShortDate(day)}</span>
+                  {isToday && <span className="weekly-calendar-today-badge">Hôm nay</span>}
+                </div>
+              </div>
+            );
+          })}
 
           <div className="weekly-calendar-time-column" style={{ height: gridHeight }}>
             {rows.map((row) => (
@@ -187,7 +196,7 @@ export function WeeklyCalendar({
                     style={{ height: rowHeight }}
                     onClick={() => onEmptySlotClick?.(makeEmptySlotDate(day, row.minutes))}
                   >
-                    <span className="weekly-calendar-empty-label">{emptySlotLabel}</span>
+                    <span className="weekly-calendar-empty-label">+ {emptySlotLabel}</span>
                   </button>
                 ))}
 
@@ -206,7 +215,7 @@ export function WeeklyCalendar({
                       }}
                     >
                       <div className="weekly-calendar-event-code">
-                        {event.kind === 'slot' ? (event.isAvailable ? 'AVAILABLE' : 'BOOKED') : formatStatusLabel(event.status || '')}
+                        {event.kind === 'slot' ? (event.isAvailable ? 'Slot rảnh' : 'Đã kín') : formatStatusLabel(event.status || '')}
                       </div>
                       <div className="weekly-calendar-event-title">{event.title}</div>
                       {event.subtitle ? <div className="weekly-calendar-event-subtitle">{event.subtitle}</div> : null}
