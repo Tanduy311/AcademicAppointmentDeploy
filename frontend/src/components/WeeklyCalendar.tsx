@@ -202,6 +202,11 @@ export function WeeklyCalendar({
 
                 {dayEvents.map((event) => {
                   const layout = getEventLayout(event);
+                  const raw = event.raw as Record<string, any> | undefined;
+                  const meetingType = raw?.meetingType;
+                  const locationOrLink = raw?.locationOrLink;
+                  const note = raw?.description || raw?.lecturerResponse || raw?.cancellationReason;
+
                   return (
                     <button
                       key={event.id}
@@ -214,11 +219,32 @@ export function WeeklyCalendar({
                         onEventClick(event);
                       }}
                     >
-                      <div className="weekly-calendar-event-code">
-                        {event.kind === 'slot' ? (event.isAvailable ? 'Slot rảnh' : 'Đã kín') : formatStatusLabel(event.status || '')}
+                      <div className="weekly-calendar-event-top">
+                        <div className="weekly-calendar-event-code">
+                          {event.kind === 'slot' ? (event.isAvailable ? 'Slot rảnh' : 'Đã kín') : formatStatusLabel(event.status || '')}
+                        </div>
+                        <div className="weekly-calendar-event-title">{event.title}</div>
+                        {event.subtitle ? <div className="weekly-calendar-event-subtitle">{event.subtitle}</div> : null}
                       </div>
-                      <div className="weekly-calendar-event-title">{event.title}</div>
-                      {event.subtitle ? <div className="weekly-calendar-event-subtitle">{event.subtitle}</div> : null}
+
+                      <div className="weekly-calendar-event-extra">
+                        {meetingType ? (
+                          <div className="weekly-calendar-event-tag">
+                            <span>Hình thức: {meetingType}</span>
+                          </div>
+                        ) : null}
+                        {locationOrLink ? (
+                          <div className="weekly-calendar-event-tag">
+                            <span>Địa điểm / Link: {locationOrLink}</span>
+                          </div>
+                        ) : null}
+                        {note ? (
+                          <div className="weekly-calendar-event-note">
+                            <span>Ghi chú: {note}</span>
+                          </div>
+                        ) : null}
+                      </div>
+
                       <div className="weekly-calendar-event-meta">
                         <IconClock size={13} />
                         <span>
