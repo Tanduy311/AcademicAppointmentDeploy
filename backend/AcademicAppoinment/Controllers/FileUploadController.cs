@@ -17,7 +17,8 @@ namespace AcademicAppoinment.Controllers
         }
 
         [HttpPost("upload")]
-        public async Task<IActionResult> UploadFile(IFormFile file, [FromQuery] string? folder)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadFile([FromForm] IFormFile file, [FromQuery] string? folder)
         {
             if (file == null || file.Length == 0)
             {
