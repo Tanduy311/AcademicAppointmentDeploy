@@ -103,8 +103,8 @@ export function NotificationsPage() {
 
             <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0 }}>{item.message}</p>
 
-            <div style={{ fontSize: '0.75rem', fontFamily: 'JetBrains Mono', color: 'var(--text-muted)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <IconClock size={13} />
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <IconClock size={14} />
               <span>{formatDateTime(item.createdAt)}</span>
             </div>
           </div>

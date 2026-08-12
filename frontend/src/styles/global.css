@@ -411,39 +411,37 @@ input:focus, textarea:focus, select:focus, .custom-select:focus {
 .badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 5px;
+  padding: 3px 10px;
   border-radius: var(--radius-full);
-  font-size: 0.75rem;
-  font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-size: 0.78rem;
+  font-weight: 500;
   border: 1px solid transparent;
+  line-height: 1.4;
 }
 
 .badge-approved, .badge-success {
-  background: var(--success-bg);
-  color: #15803d;
+  background: #f0fdf4;
+  color: #166534;
   border-color: #bbf7d0;
 }
 
 .badge-pending, .badge-warning {
-  background: var(--warning-bg);
+  background: #fffbeb;
   color: #b45309;
-  border-color: #fde68a;
+  border-color: #fef08a;
 }
 
 .badge-rejected, .badge-cancelled, .badge-danger {
-  background: var(--danger-bg);
-  color: #b91c1c;
+  background: #fef2f2;
+  color: #991b1b;
   border-color: #fecaca;
 }
 
 .badge-neutral {
-  background: #f1f5f9;
+  background: #f8fafc;
   color: var(--text-secondary);
-  border-color: var(--border-subtle);
+  border-color: #e2e8f0;
 }
 
 .pill-role {

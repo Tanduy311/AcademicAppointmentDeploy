@@ -227,26 +227,24 @@ export function LecturerAppointmentsPage() {
             ) : null}
 
             {item.status === 'Pending' ? (
-              <div style={{ paddingTop: 8, display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <div style={{ paddingTop: 8, display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                 <button
                   type="button"
                   className="btn btn-danger"
-                  style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  style={{ fontSize: '0.85rem', fontWeight: 500, padding: '6px 16px', borderRadius: 'var(--radius-md)' }}
                   onClick={() => openDecisionModal(item, 'Rejected')}
                   disabled={busyId === item.appointmentId}
                 >
-                  <IconClose size={15} />
-                  <span>Từ Chối</span>
+                  <span>Từ chối</span>
                 </button>
                 <button
                   type="button"
                   className="btn btn-success"
-                  style={{ fontSize: '0.82rem', padding: '6px 16px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                  style={{ fontSize: '0.85rem', fontWeight: 500, padding: '6px 16px', borderRadius: 'var(--radius-md)' }}
                   onClick={() => openDecisionModal(item, 'Approved')}
                   disabled={busyId === item.appointmentId}
                 >
-                  <IconCheck size={15} />
-                  <span>Phê Duyệt Lịch Hẹn</span>
+                  <span>Phê duyệt</span>
                 </button>
               </div>
             ) : (item.status === 'Confirmed' || item.status === 'Approved') && activeTab === 'current' ? (
@@ -291,17 +289,17 @@ export function LecturerAppointmentsPage() {
               {actionType === 'Approved' ? (
                 <>
                   <IconCheck size={20} style={{ color: 'var(--success)' }} />
-                  <span>Phê Duyệt Lịch Hẹn</span>
+                  <span>Phê duyệt lịch hẹn</span>
                 </>
               ) : actionType === 'Cancelled' ? (
                 <>
                   <IconClose size={20} style={{ color: '#dc2626' }} />
-                  <span>Hủy Lịch Hẹn Đã Duyệt</span>
+                  <span>Hủy lịch hẹn đã duyệt</span>
                 </>
               ) : (
                 <>
                   <IconClose size={20} style={{ color: 'var(--danger)' }} />
-                  <span>Từ Chối Lịch Hẹn</span>
+                  <span>Từ chối lịch hẹn</span>
                 </>
               )}
             </h2>
@@ -310,7 +308,7 @@ export function LecturerAppointmentsPage() {
             </p>
 
             <label className="field" style={{ marginBottom: 20 }}>
-              <span>{actionType === 'Cancelled' ? 'Lý do hủy lịch gửi tới Sinh viên:' : 'Lời nhắn phản hồi gửi tới Sinh viên:'}</span>
+              <span>{actionType === 'Cancelled' ? 'Lý do hủy lịch gửi tới sinh viên:' : 'Lời nhắn phản hồi gửi tới sinh viên:'}</span>
               <textarea
                 rows={3}
                 value={responseMsg}
@@ -321,7 +319,7 @@ export function LecturerAppointmentsPage() {
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button type="button" className="btn btn-secondary" onClick={() => setActiveItem(null)}>
-                Hủy Bỏ
+                Hủy bỏ
               </button>
               <button
                 type="button"
@@ -329,7 +327,7 @@ export function LecturerAppointmentsPage() {
                 onClick={handleDecisionSubmit}
                 disabled={busyId === activeItem.appointmentId}
               >
-                {busyId === activeItem.appointmentId ? 'Đang lưu...' : actionType === 'Approved' ? 'Xác Nhận Duyệt' : actionType === 'Cancelled' ? 'Xác Nhận Hủy' : 'Xác Nhận Từ Chối'}
+                {busyId === activeItem.appointmentId ? 'Đang lưu...' : actionType === 'Approved' ? 'Xác nhận duyệt' : actionType === 'Cancelled' ? 'Xác nhận hủy' : 'Xác nhận từ chối'}
               </button>
             </div>
           </div>
