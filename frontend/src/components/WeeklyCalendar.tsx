@@ -10,6 +10,7 @@ import {
   IconGoogleCalendar,
   IconPlus,
   IconCheck,
+  IconMapPin,
 } from './Icons';
 import { formatStatusLabel, parseDate } from '../utils/format';
 
@@ -38,12 +39,12 @@ interface WeeklyCalendarProps {
   onNewEvent?: () => void;
 }
 
-const dayLabelsFull = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const dayLabelsFull = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
 const dayLabelsShort = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const gridStartHour = 8;
+const gridStartHour = 7;
 const gridEndHour = 18;
 const rowMinutes = 60;
-const rowHeight = 94;
+const rowHeight = 90;
 const totalGridMinutes = (gridEndHour - gridStartHour) * 60;
 const gridStartMinutes = gridStartHour * 60;
 
@@ -72,18 +73,19 @@ function sameDay(a: Date, b: Date) {
 
 function formatMonthYear(date: Date) {
   const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
+    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
   ];
   return `${monthNames[date.getMonth()]}, ${date.getFullYear()}`;
 }
 
 function formatTimeAMPM(date: Date) {
   let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, '0');
   const ampm = hours >= 12 ? 'PM' : 'AM';
   hours = hours % 12;
   hours = hours ? hours : 12;
-  return `${String(hours).padStart(2, '0')} ${ampm}`;
+  return `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
 }
 
 function formatTimeRange(startStr: string, endStr: string) {
@@ -106,51 +108,43 @@ function getRows() {
   return rows;
 }
 
-// Pastel Tone palette mapping matching design reference images
 function getEventTone(event: CalendarEvent) {
-  const titleLower = event.title.toLowerCase();
-  const statusLower = (event.status || '').toLowerCase();
+  if (event.kind === 'slot') {
+    return event.isAvailable ? 'blue' : 'slate';
+  }
 
-  if (titleLower.includes('standup') || titleLower.includes('review') || statusLower.includes('reject')) {
-    return 'pink'; // Soft blush pink (#fff0f3, accent #f43f5e)
-  }
-  if (titleLower.includes('doctor') || titleLower.includes('health') || statusLower.includes('approved') || statusLower.includes('confirmed')) {
-    return 'green'; // Soft mint green (#f0fdf4, accent #22c55e)
-  }
-  if (titleLower.includes('birthday') || titleLower.includes('agency') || titleLower.includes('slot') || event.isAvailable) {
-    return 'blue'; // Soft sky blue (#eff6ff, accent #3b82f6)
-  }
-  if (titleLower.includes('bazaar') || titleLower.includes('lunch') || titleLower.includes('break')) {
-    return 'yellow'; // Soft butter yellow (#fefce8, accent #eab308)
-  }
-  return 'purple'; // Soft lavender (#faf5ff, accent #a855f7)
+  const status = (event.status || '').toLowerCase();
+  if (['confirmed', 'approved'].includes(status)) return 'green';
+  if (status === 'pending') return 'yellow';
+  if (['cancelled', 'canceled', 'rejected'].includes(status)) return 'pink';
+  return 'slate';
 }
 
-const avatarPresets = [
-  [
-    { name: 'Alex', bg: '#ef4444', text: 'A' },
-    { name: 'Sarah', bg: '#22c55e', text: 'S' },
-    { name: 'Michael', bg: '#a855f7', text: 'M' },
-  ],
-  [
-    { name: 'David', bg: '#eab308', text: 'D' },
-    { name: 'Emma', bg: '#06b6d4', text: 'E' },
-  ],
-  [
-    { name: 'Chris', bg: '#ec4899', text: 'C' },
-    { name: 'Jessica', bg: '#3b82f6', text: 'J' },
-    { name: 'Daniel', bg: '#84cc16', text: 'D' },
-  ],
-];
+function extractRealAttendees(event: CalendarEvent) {
+  const raw = event.raw as Record<string, any> | undefined;
+  if (!raw) return [];
 
-function getEventAvatars(id: string) {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash << 5) - hash + id.charCodeAt(i);
+  const attendees: { name: string; bg: string; initial: string }[] = [];
+
+  if (raw.studentName) {
+    const name = String(raw.studentName);
+    attendees.push({
+      name,
+      bg: '#2563eb',
+      initial: name.charAt(0).toUpperCase(),
+    });
   }
-  const index = Math.abs(hash) % avatarPresets.length;
-  const count = (Math.abs(hash) % 18) + 2;
-  return { avatars: avatarPresets[index], countText: `+${count} Other` };
+
+  if (raw.lecturerName) {
+    const name = String(raw.lecturerName);
+    attendees.push({
+      name,
+      bg: '#16a34a',
+      initial: name.charAt(0).toUpperCase(),
+    });
+  }
+
+  return attendees;
 }
 
 function getEventLayout(event: CalendarEvent, rowsCount: number) {
@@ -180,7 +174,7 @@ function getMiniCalendarDays(currentDate: Date) {
   const month = currentDate.getMonth();
   const firstDayOfMonth = new Date(year, month, 1);
   let startingDay = firstDayOfMonth.getDay(); // 0 = Sunday
-  startingDay = startingDay === 0 ? 6 : startingDay - 1; // convert to Mon = 0
+  startingDay = startingDay === 0 ? 6 : startingDay - 1; // convert Mon = 0
 
   const days: { date: Date; isCurrentMonth: boolean }[] = [];
   const startDate = new Date(year, month, 1 - startingDay);
@@ -210,12 +204,11 @@ export function WeeklyCalendar({
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
   const [miniMonthDate, setMiniMonthDate] = useState<Date>(new Date(weekStart));
   const [selectedSchedules, setSelectedSchedules] = useState<string[]>([
-    'Daily Standup',
-    'Weekly Review',
-    'Team Meeting',
-    'Lunch Break',
-    'Client Meeting',
-    'Other',
+    'Tư vấn đồ án',
+    'Lịch hẹn tư vấn',
+    'Khung giờ rảnh',
+    'Họp chuyên môn',
+    'Khác',
   ]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isScheduleOpen, setIsScheduleOpen] = useState(true);
@@ -229,7 +222,7 @@ export function WeeklyCalendar({
   const rows = getRows();
   const gridHeight = rows.length * rowHeight;
 
-  // Filter events based on sidebar checkboxes & categories
+  // Filter events
   const filteredEvents = events.filter((event) => {
     if (selectedCategory !== 'all') {
       const cat = (event.category || '').toLowerCase();
@@ -259,6 +252,12 @@ export function WeeklyCalendar({
     setMiniMonthDate(new Date(miniMonthDate.getFullYear(), miniMonthDate.getMonth() + 1, 1));
   };
 
+  const goToToday = () => {
+    const today = new Date();
+    setMiniMonthDate(today);
+    onWeekChange(startOfWeek(today));
+  };
+
   return (
     <div className={`weekly-calendar-redesign ${isSidebarOpen ? 'sidebar-expanded' : 'sidebar-collapsed'}`}>
       {/* LEFT SIDEBAR PANEL (Collapsible) */}
@@ -271,10 +270,10 @@ export function WeeklyCalendar({
             </div>
             <div>
               <div className="all-calendar-title">
-                All Calendar
+                Lịch Học Thuật
                 <IconChevronDown size={14} className="dropdown-arrow" />
               </div>
-              <div className="all-calendar-subtitle">Personal, Teams</div>
+              <div className="all-calendar-subtitle">Cá nhân & Giảng viên</div>
             </div>
           </div>
 
@@ -291,15 +290,15 @@ export function WeeklyCalendar({
         {/* MINI MONTH CALENDAR */}
         <div className="mini-calendar-section">
           <div className="mini-calendar-nav">
-            <button type="button" className="mini-nav-btn" onClick={prevMiniMonth}>
+            <button type="button" className="mini-nav-btn" onClick={prevMiniMonth} title="Tháng trước">
               <IconChevronLeft size={16} />
             </button>
 
-            <span className="mini-month-label">
-              {miniMonthDate.toLocaleString('en-US', { month: 'long' })}
-            </span>
+            <button type="button" className="mini-month-label" onClick={goToToday} title="Về hôm nay">
+              {miniMonthDate.toLocaleString('vi-VN', { month: 'long', year: 'numeric' })}
+            </button>
 
-            <button type="button" className="mini-nav-btn" onClick={nextMiniMonth}>
+            <button type="button" className="mini-nav-btn" onClick={nextMiniMonth} title="Tháng sau">
               <IconChevronRight size={16} />
             </button>
           </div>
@@ -340,19 +339,18 @@ export function WeeklyCalendar({
             className="accordion-header"
             onClick={() => setIsScheduleOpen(!isScheduleOpen)}
           >
-            <span>My Schedule</span>
+            <span>Phân loại lịch</span>
             {isScheduleOpen ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
           </button>
 
           {isScheduleOpen && (
             <div className="accordion-content">
               {[
-                'Daily Standup',
-                'Weekly Review',
-                'Team Meeting',
-                'Lunch Break',
-                'Client Meeting',
-                'Other',
+                'Tư vấn đồ án',
+                'Lịch hẹn tư vấn',
+                'Khung giờ rảnh',
+                'Họp chuyên môn',
+                'Khác',
               ].map((item) => {
                 const isChecked = selectedSchedules.includes(item);
                 return (
@@ -378,17 +376,17 @@ export function WeeklyCalendar({
             className="accordion-header"
             onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
           >
-            <span>Categories</span>
+            <span>Trạng thái</span>
             {isCategoriesOpen ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
           </button>
 
           {isCategoriesOpen && (
             <div className="accordion-content">
               {[
-                { name: 'Work', color: '#ef4444', count: 18 },
-                { name: 'Personal', color: '#22c55e', count: 9 },
-                { name: 'Breaks', color: '#eab308', count: 13 },
-                { name: 'Events', color: '#3b82f6', count: 4 },
+                { name: 'Đã duyệt', color: '#22c55e', count: events.filter(e => ['approved','confirmed'].includes((e.status||'').toLowerCase())).length },
+                { name: 'Chờ duyệt', color: '#f59e0b', count: events.filter(e => (e.status||'').toLowerCase() === 'pending').length },
+                { name: 'Slot rảnh', color: '#3b82f6', count: events.filter(e => e.kind === 'slot' && e.isAvailable).length },
+                { name: 'Đã hủy', color: '#ef4444', count: events.filter(e => ['cancelled','rejected'].includes((e.status||'').toLowerCase())).length },
               ].map((cat) => (
                 <button
                   key={cat.name}
@@ -426,24 +424,24 @@ export function WeeklyCalendar({
 
             <div>
               <div className="calendar-breadcrumbs">
-                Calendar &gt; <span>All Calendar</span>
+                Lịch biểu &gt; <span>Lịch tổng quan</span>
               </div>
               <h1 className="calendar-page-title">Calendar</h1>
             </div>
           </div>
         </header>
 
-        {/* CONTROL ROW: Month Selector, Event Count, View Mode Switcher, Sync & New Event Buttons */}
+        {/* CONTROL ROW */}
         <div className="calendar-controls-bar">
           <div className="controls-bar-left">
-            <div className="month-picker-dropdown">
+            <div className="month-picker-dropdown" onClick={goToToday} title="Click để về hôm nay">
               <span className="month-picker-title">{formatMonthYear(weekStart)}</span>
               <IconChevronDown size={16} />
             </div>
 
             <div className="events-count-pill">
               <IconCalendar size={14} />
-              <span>{filteredEvents.length} event's</span>
+              <span>{filteredEvents.length} lịch hẹn</span>
             </div>
           </div>
 
@@ -455,21 +453,21 @@ export function WeeklyCalendar({
                 className={`view-pill ${viewMode === 'day' ? 'view-pill-active' : ''}`}
                 onClick={() => setViewMode('day')}
               >
-                Day
+                Ngày
               </button>
               <button
                 type="button"
                 className={`view-pill ${viewMode === 'week' ? 'view-pill-active' : ''}`}
                 onClick={() => setViewMode('week')}
               >
-                Week
+                Tuần
               </button>
               <button
                 type="button"
                 className={`view-pill ${viewMode === 'month' ? 'view-pill-active' : ''}`}
                 onClick={() => setViewMode('month')}
               >
-                Month
+                Tháng
               </button>
             </div>
 
@@ -489,7 +487,7 @@ export function WeeklyCalendar({
               onClick={() => onNewEvent?.() || onEmptySlotClick?.(new Date())}
             >
               <IconPlus size={16} />
-              <span>New Event</span>
+              <span>Tạo cuộc hẹn mới</span>
             </button>
           </div>
         </div>
@@ -501,7 +499,7 @@ export function WeeklyCalendar({
           <div className="weekly-grid-wrapper">
             {/* CORNER TIMEZONE HEADER */}
             <div className="grid-corner-cell">
-              <span>UTC +1</span>
+              <span>UTC +7</span>
             </div>
 
             {/* DAY COLUMNS HEADERS */}
@@ -555,45 +553,78 @@ export function WeeklyCalendar({
                   {dayEvents.map((event) => {
                     const layout = getEventLayout(event, rows.length);
                     const tone = getEventTone(event);
-                    const { avatars, countText } = getEventAvatars(event.id);
+                    const attendees = extractRealAttendees(event);
+                    const raw = event.raw as Record<string, any> | undefined;
+                    const meetingType = raw?.meetingType;
+                    const locationOrLink = raw?.locationOrLink;
+                    const statusText =
+                      event.kind === 'slot'
+                        ? event.isAvailable
+                          ? 'Slot rảnh'
+                          : 'Đã kín'
+                        : formatStatusLabel(event.status || '');
 
                     return (
                       <div
                         key={event.id}
                         className={`pastel-event-card tone-${tone}`}
                         style={{
-                          top: layout.top + 6,
-                          height: Math.max(68, layout.height - 12),
+                          top: layout.top + 5,
+                          height: Math.max(62, layout.height - 10),
                         }}
                         onClick={() => onEventClick(event)}
                       >
                         <div className="card-left-accent" />
 
                         <div className="card-content-body">
-                          <div className="card-header-row">
-                            <h4 className="card-event-title">{event.title}</h4>
-                          </div>
-
-                          <div className="card-time-row">
-                            <IconClock size={13} />
-                            <span>{formatTimeRange(event.startTime, event.endTime)}</span>
-                          </div>
-
-                          {/* ATTENDEES AVATAR STACK */}
-                          <div className="card-avatar-footer">
-                            <div className="avatar-overlap-stack">
-                              {avatars.map((av, avIdx) => (
-                                <div
-                                  key={av.name + avIdx}
-                                  className="avatar-bubble"
-                                  style={{ backgroundColor: av.bg }}
-                                  title={av.name}
-                                >
-                                  {av.text}
-                                </div>
-                              ))}
+                          <div className="card-top-info">
+                            <div className="card-status-badge">
+                              {statusText}
                             </div>
-                            <span className="avatar-count-badge">{countText}</span>
+                            <h4 className="card-event-title">{event.title}</h4>
+                            {event.subtitle && (
+                              <div className="card-event-subtitle">{event.subtitle}</div>
+                            )}
+                          </div>
+
+                          <div className="card-bottom-info">
+                            <div className="card-time-row">
+                              <IconClock size={12} />
+                              <span>{formatTimeRange(event.startTime, event.endTime)}</span>
+                            </div>
+
+                            {/* HOVER DETAILS */}
+                            <div className="card-hover-extra">
+                              {meetingType && (
+                                <span className="extra-tag">Hình thức: {meetingType}</span>
+                              )}
+                              {locationOrLink && (
+                                <span className="extra-tag">
+                                  <IconMapPin size={11} /> {locationOrLink}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* REAL ATTENDEES AVATARS */}
+                            {attendees.length > 0 && (
+                              <div className="card-avatar-footer">
+                                <div className="avatar-overlap-stack">
+                                  {attendees.map((att) => (
+                                    <div
+                                      key={att.name}
+                                      className="avatar-bubble"
+                                      style={{ backgroundColor: att.bg }}
+                                      title={att.name}
+                                    >
+                                      {att.initial}
+                                    </div>
+                                  ))}
+                                </div>
+                                <span className="avatar-count-badge">
+                                  {attendees.map((a) => a.name).join(', ')}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
