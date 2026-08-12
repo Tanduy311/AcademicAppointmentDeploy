@@ -549,33 +549,6 @@ export function WeeklyCalendar({
                         <div className="card-time-arrow">
                           {formatTimeArrowRange(event.startTime, event.endTime)}
                         </div>
-
-                        {/* RICH HOVER PREVIEW POPOVER TOOLTIP */}
-                        <div className="card-hover-popover">
-                          <div className="popover-header">
-                            <span className="popover-tag">{tagCode}</span>
-                            <span className="popover-time">{formatTimeArrowRange(event.startTime, event.endTime)}</span>
-                          </div>
-                          <div className="popover-title">{event.title}</div>
-                          <div className="popover-divider" />
-                          <div className="popover-info-row">
-                            <span className="popover-label">Nhóm:</span>
-                            <span className="popover-val">{groupName}</span>
-                          </div>
-                          <div className="popover-info-row">
-                            <span className="popover-label">Địa điểm:</span>
-                            <span className="popover-val">{location}</span>
-                          </div>
-                          <div className="popover-info-row">
-                            <span className="popover-label">Giảng viên/SV:</span>
-                            <span className="popover-val">{lecturerName}</span>
-                          </div>
-                          {raw?.description ? (
-                            <div className="popover-desc">
-                              <strong>Ghi chú:</strong> {raw.description}
-                            </div>
-                          ) : null}
-                        </div>
                       </div>
                     );
                   })}
