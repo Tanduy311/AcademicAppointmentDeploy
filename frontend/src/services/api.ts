@@ -114,6 +114,7 @@ export const api = {
 
   users: () => request<AdminUserListItemDto[]>('/api/admin/users'),
   userById: (userId: number) => request<AdminUserDetailDto>(`/api/admin/users/${userId}`),
+  adminAppointments: () => request<AppointmentResponseDto[]>('/api/admin/appointments'),
   roles: () => request<RoleDto[]>('/api/admin/roles'),
   updateUserStatus: (userId: number, dto: UpdateUserStatusDto) =>
     request<{ message: string }>(`/api/admin/users/${userId}/status`, {

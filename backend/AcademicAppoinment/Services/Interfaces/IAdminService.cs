@@ -1,4 +1,5 @@
 using AcademicAppoinment.DTOs.Admin;
+using AcademicAppoinment.DTOs.Appointments;
 using System.Security.Claims;
 
 namespace AcademicAppoinment.Services.Interfaces
@@ -7,6 +8,7 @@ namespace AcademicAppoinment.Services.Interfaces
     {
         Task<IReadOnlyList<AdminUserListItemDto>> GetUsersAsync();
         Task<AdminUserDetailDto> GetUserByIdAsync(int userId);
+        Task<IReadOnlyList<AppointmentResponseDto>> GetAppointmentsAsync();
         Task<IReadOnlyList<RoleDto>> GetRolesAsync();
         Task<bool> SetUserActiveAsync(int userId, bool isActive, ClaimsPrincipal currentUser);
         Task<bool> SetUserRoleAsync(int userId, int roleId, ClaimsPrincipal currentUser);

@@ -141,6 +141,16 @@ namespace AcademicAppoinment.Repositories
                 .Include(a => a.AvailabilitySlot)
                 .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
 
+        public Task<List<Appointment>> GetAppointmentsAsync() =>
+            _context.Appointments
+                .Include(a => a.Student)
+                    .ThenInclude(s => s!.User)
+                .Include(a => a.Lecturer)
+                    .ThenInclude(l => l!.User)
+                .Include(a => a.AvailabilitySlot)
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+
         public Task<List<Appointment>> GetAppointmentsByStudentIdAsync(int studentId) =>
             _context.Appointments
                 .Include(a => a.Student)

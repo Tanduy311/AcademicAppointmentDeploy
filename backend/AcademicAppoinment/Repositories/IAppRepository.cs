@@ -31,6 +31,7 @@ namespace AcademicAppoinment.Repositories
         Task<List<AvailabilitySlot>> GetSlotsByLecturerIdAsync(int lecturerId);
 
         Task<Appointment?> GetAppointmentDetailByIdAsync(int appointmentId);
+        Task<List<Appointment>> GetAppointmentsAsync();
         Task<List<Appointment>> GetAppointmentsByStudentIdAsync(int studentId);
         Task<List<Appointment>> GetAppointmentsByLecturerIdAsync(int lecturerId);
 

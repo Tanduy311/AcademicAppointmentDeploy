@@ -3,6 +3,7 @@ import { AppShell } from './components/AppShell';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './context/AuthContext';
 import { DashboardPage } from './pages/DashboardPage';
+import { AdminAppointmentsPage } from './pages/AdminAppointmentsPage';
 import { AdminRolesPage } from './pages/AdminRolesPage';
 import { AdminUsersPage } from './pages/AdminUsersPage';
 import { LecturerAppointmentsPage } from './pages/LecturerAppointmentsPage';
@@ -62,6 +63,7 @@ export function App() {
 
           <Route element={<ProtectedRoute roles={['Admin']} />}>
             <Route path="admin/users" element={<AdminUsersPage />} />
+            <Route path="admin/appointments" element={<AdminAppointmentsPage />} />
             <Route path="admin/roles" element={<AdminRolesPage />} />
           </Route>
         </Route>

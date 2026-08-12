@@ -83,6 +83,12 @@ export function AppShell() {
       icon: <IconShield className="nav-icon" />
     },
     {
+      to: '/app/admin/appointments',
+      label: 'Quản lý cuộc hẹn',
+      show: role === 'Admin',
+      icon: <IconCalendar className="nav-icon" />
+    },
+    {
       to: '/app/notifications',
       label: 'Thông báo',
       show: true,

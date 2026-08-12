@@ -1,4 +1,5 @@
 using AcademicAppoinment.DTOs.Admin;
+using AcademicAppoinment.DTOs.Appointments;
 using AcademicAppoinment.Helpers.Exceptions;
 using AcademicAppoinment.Models;
 using AcademicAppoinment.Repositories;
@@ -31,6 +32,12 @@ namespace AcademicAppoinment.Services
             }
 
             return ToDetailDto(user);
+        }
+
+        public async Task<IReadOnlyList<AppointmentResponseDto>> GetAppointmentsAsync()
+        {
+            var appointments = await _repository.GetAppointmentsAsync();
+            return appointments.Select(ToAppointmentResponseDto).ToList();
         }
 
         public async Task<IReadOnlyList<RoleDto>> GetRolesAsync()
@@ -143,6 +150,32 @@ namespace AcademicAppoinment.Services
                     OfficeLocation = user.Lecturer.OfficeLocation,
                     ConsultationDescription = user.Lecturer.ConsultationDescription
                 }
+            };
+        }
+
+        private static AppointmentResponseDto ToAppointmentResponseDto(Appointment appointment)
+        {
+            return new AppointmentResponseDto
+            {
+                AppointmentId = appointment.AppointmentId,
+                StudentId = appointment.StudentId,
+                StudentName = appointment.Student?.User?.FullName ?? "",
+                StudentCode = appointment.Student?.StudentCode,
+                LecturerId = appointment.LecturerId,
+                LecturerName = appointment.Lecturer?.User?.FullName ?? "",
+                Department = appointment.Lecturer?.Department,
+                AvailabilitySlotId = appointment.AvailabilitySlotId,
+                StartTime = appointment.AvailabilitySlot?.StartTime ?? default,
+                EndTime = appointment.AvailabilitySlot?.EndTime ?? default,
+                MeetingType = appointment.AvailabilitySlot?.MeetingType ?? "",
+                LocationOrLink = appointment.AvailabilitySlot?.LocationOrLink,
+                Topic = appointment.Topic,
+                Description = appointment.Description,
+                Status = appointment.Status,
+                LecturerResponse = appointment.LecturerResponse,
+                CancellationReason = appointment.CancellationReason,
+                CreatedAt = appointment.CreatedAt,
+                UpdatedAt = appointment.UpdatedAt
             };
         }
 

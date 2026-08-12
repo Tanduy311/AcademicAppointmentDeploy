@@ -38,6 +38,13 @@ namespace AcademicAppoinment.Controllers
             return Ok(result);
         }
 
+        [HttpGet("appointments")]
+        public async Task<IActionResult> GetAppointments()
+        {
+            var result = await _adminService.GetAppointmentsAsync();
+            return Ok(result);
+        }
+
         [HttpPut("users/{userId}/status")]
         public async Task<IActionResult> UpdateStatus(int userId, [FromBody] UpdateUserStatusDto dto)
         {
