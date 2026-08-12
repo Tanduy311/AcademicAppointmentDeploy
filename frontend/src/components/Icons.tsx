@@ -197,3 +197,65 @@ export function IconEdit({ size = 18, ...props }: IconProps) {
     </svg>
   );
 }
+
+export function IconChevronLeft({ size = 18, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+    </svg>
+  );
+}
+
+export function IconChevronRight({ size = 18, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+  );
+}
+
+export function IconChevronDown({ size = 18, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+  );
+}
+
+export function IconChevronUp({ size = 18, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+    </svg>
+  );
+}
+
+export function IconSidebarToggle({ size = 18, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h16" />
+    </svg>
+  );
+}
+
+export function IconUsers({ size = 18, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  );
+}
+
+export function IconGoogleCalendar({ size = 18, ...props }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" {...props}>
+      <path d="M19 3H5C3.89543 3 3 3.89543 3 5V19C3 20.1046 3.89543 21 5 21H19C20.1046 21 21 20.1046 21 19V5C21 3.89543 20.1046 3 19 3Z" fill="#FFFFFF" stroke="#E2E8F0" strokeWidth="1.5"/>
+      <path d="M19 3H5C3.89543 3 3 3.89543 3 5V8H21V5C21 3.89543 20.1046 3 19 3Z" fill="#4285F4"/>
+      <path d="M3 8H8V21H5C3.89543 21 3 20.1046 3 19V8Z" fill="#34A853"/>
+      <path d="M16 21H19C20.1046 21 21 20.1046 21 19V8H16V21Z" fill="#FBBC04"/>
+      <path d="M8 8H16V21H8V8Z" fill="#EA4335"/>
+      <text x="12" y="16.5" textAnchor="middle" fill="#FFFFFF" fontSize="8" fontWeight="bold" fontFamily="sans-serif">31</text>
+    </svg>
+  );
+}
+

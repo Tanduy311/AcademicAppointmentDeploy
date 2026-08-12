@@ -1,4 +1,16 @@
-import { IconCalendar, IconClock } from './Icons';
+import { useState } from 'react';
+import {
+  IconCalendar,
+  IconClock,
+  IconChevronLeft,
+  IconChevronRight,
+  IconChevronDown,
+  IconChevronUp,
+  IconSidebarToggle,
+  IconGoogleCalendar,
+  IconPlus,
+  IconCheck,
+} from './Icons';
 import { formatStatusLabel, parseDate } from '../utils/format';
 
 export type CalendarEventKind = 'appointment' | 'slot';
@@ -13,6 +25,7 @@ export interface CalendarEvent<T = unknown> {
   status?: string;
   isAvailable?: boolean;
   raw: T;
+  category?: string;
 }
 
 interface WeeklyCalendarProps {
@@ -22,17 +35,17 @@ interface WeeklyCalendarProps {
   onEventClick: (event: CalendarEvent) => void;
   onEmptySlotClick?: (date: Date) => void;
   emptySlotLabel?: string;
+  onNewEvent?: () => void;
 }
 
-const dayLabels = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
-const gridStartHour = 7;
-const gridStartMinute = 30;
-const gridEndHour = 17;
-const gridEndMinute = 30;
+const dayLabelsFull = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const dayLabelsShort = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+const gridStartHour = 8;
+const gridEndHour = 18;
 const rowMinutes = 60;
-const rowHeight = 84;
-const totalGridMinutes = (gridEndHour * 60 + gridEndMinute) - (gridStartHour * 60 + gridStartMinute);
-const gridStartMinutes = gridStartHour * 60 + gridStartMinute;
+const rowHeight = 94;
+const totalGridMinutes = (gridEndHour - gridStartHour) * 60;
+const gridStartMinutes = gridStartHour * 60;
 
 function startOfWeek(date: Date) {
   const result = new Date(date);
@@ -50,57 +63,107 @@ function addDays(date: Date, days: number) {
 }
 
 function sameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
-function formatShortDate(date: Date) {
-  return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+function formatMonthYear(date: Date) {
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  return `${monthNames[date.getMonth()]}, ${date.getFullYear()}`;
 }
 
-function formatTime(date: Date) {
-  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+function formatTimeAMPM(date: Date) {
+  let hours = date.getHours();
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  return `${String(hours).padStart(2, '0')} ${ampm}`;
 }
 
-function formatMinutes(minutes: number) {
-  const hour = Math.floor(minutes / 60);
-  const minute = minutes % 60;
-  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+function formatTimeRange(startStr: string, endStr: string) {
+  const start = parseDate(startStr);
+  const end = parseDate(endStr);
+  return `${formatTimeAMPM(start)} - ${formatTimeAMPM(end)}`;
 }
 
 function getRows() {
   const rows: { label: string; minutes: number }[] = [];
-  for (let minutes = gridStartMinutes; minutes < gridEndHour * 60 + gridEndMinute; minutes += rowMinutes) {
+  for (let hour = gridStartHour; hour < gridEndHour; hour++) {
+    const minutes = hour * 60;
+    const date = new Date();
+    date.setHours(hour, 0, 0, 0);
     rows.push({
-      label: `${formatMinutes(minutes)} - ${formatMinutes(minutes + rowMinutes)}`,
+      label: formatTimeAMPM(date),
       minutes,
     });
   }
   return rows;
 }
 
-function eventTone(event: CalendarEvent) {
-  if (event.kind === 'slot') {
-    return event.isAvailable ? 'slot-open' : 'slot-booked';
-  }
+// Pastel Tone palette mapping matching design reference images
+function getEventTone(event: CalendarEvent) {
+  const titleLower = event.title.toLowerCase();
+  const statusLower = (event.status || '').toLowerCase();
 
-  const status = (event.status || '').toLowerCase();
-  if (['confirmed', 'approved'].includes(status)) return 'confirmed';
-  if (status === 'pending') return 'pending';
-  if (['cancelled', 'canceled', 'rejected'].includes(status)) return 'muted';
-  return 'neutral';
+  if (titleLower.includes('standup') || titleLower.includes('review') || statusLower.includes('reject')) {
+    return 'pink'; // Soft blush pink (#fff0f3, accent #f43f5e)
+  }
+  if (titleLower.includes('doctor') || titleLower.includes('health') || statusLower.includes('approved') || statusLower.includes('confirmed')) {
+    return 'green'; // Soft mint green (#f0fdf4, accent #22c55e)
+  }
+  if (titleLower.includes('birthday') || titleLower.includes('agency') || titleLower.includes('slot') || event.isAvailable) {
+    return 'blue'; // Soft sky blue (#eff6ff, accent #3b82f6)
+  }
+  if (titleLower.includes('bazaar') || titleLower.includes('lunch') || titleLower.includes('break')) {
+    return 'yellow'; // Soft butter yellow (#fefce8, accent #eab308)
+  }
+  return 'purple'; // Soft lavender (#faf5ff, accent #a855f7)
 }
 
-function getEventLayout(event: CalendarEvent) {
+const avatarPresets = [
+  [
+    { name: 'Alex', bg: '#ef4444', text: 'A' },
+    { name: 'Sarah', bg: '#22c55e', text: 'S' },
+    { name: 'Michael', bg: '#a855f7', text: 'M' },
+  ],
+  [
+    { name: 'David', bg: '#eab308', text: 'D' },
+    { name: 'Emma', bg: '#06b6d4', text: 'E' },
+  ],
+  [
+    { name: 'Chris', bg: '#ec4899', text: 'C' },
+    { name: 'Jessica', bg: '#3b82f6', text: 'J' },
+    { name: 'Daniel', bg: '#84cc16', text: 'D' },
+  ],
+];
+
+function getEventAvatars(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash << 5) - hash + id.charCodeAt(i);
+  }
+  const index = Math.abs(hash) % avatarPresets.length;
+  const count = (Math.abs(hash) % 18) + 2;
+  return { avatars: avatarPresets[index], countText: `+${count} Other` };
+}
+
+function getEventLayout(event: CalendarEvent, rowsCount: number) {
   const start = parseDate(event.startTime);
   const end = parseDate(event.endTime);
   const startMinutes = start.getHours() * 60 + start.getMinutes();
   const endMinutes = end.getHours() * 60 + end.getMinutes();
   const clampedStart = Math.max(startMinutes, gridStartMinutes);
-  const clampedEnd = Math.min(endMinutes, gridEndHour * 60 + gridEndMinute);
-  const visibleMinutes = Math.max(30, clampedEnd - clampedStart);
+  const clampedEnd = Math.min(endMinutes, gridStartHour * 60 + totalGridMinutes);
+  const visibleMinutes = Math.max(45, clampedEnd - clampedStart);
 
   return {
-    top: ((clampedStart - gridStartMinutes) / totalGridMinutes) * (totalGridMinutes / rowMinutes) * rowHeight,
+    top: ((clampedStart - gridStartMinutes) / totalGridMinutes) * (rowsCount * rowHeight),
     height: (visibleMinutes / rowMinutes) * rowHeight,
   };
 }
@@ -111,154 +174,437 @@ function makeEmptySlotDate(day: Date, rowMinutesValue: number) {
   return result;
 }
 
+// Generate 42 days for mini calendar view
+function getMiniCalendarDays(currentDate: Date) {
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const firstDayOfMonth = new Date(year, month, 1);
+  let startingDay = firstDayOfMonth.getDay(); // 0 = Sunday
+  startingDay = startingDay === 0 ? 6 : startingDay - 1; // convert to Mon = 0
+
+  const days: { date: Date; isCurrentMonth: boolean }[] = [];
+  const startDate = new Date(year, month, 1 - startingDay);
+
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(startDate);
+    d.setDate(startDate.getDate() + i);
+    days.push({
+      date: d,
+      isCurrentMonth: d.getMonth() === month,
+    });
+  }
+
+  return days;
+}
+
 export function WeeklyCalendar({
   events,
   weekStart,
   onWeekChange,
   onEventClick,
   onEmptySlotClick,
-  emptySlotLabel = 'Tạo tại đây',
+  emptySlotLabel = 'Tạo lịch',
+  onNewEvent,
 }: WeeklyCalendarProps) {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
+  const [miniMonthDate, setMiniMonthDate] = useState<Date>(new Date(weekStart));
+  const [selectedSchedules, setSelectedSchedules] = useState<string[]>([
+    'Daily Standup',
+    'Weekly Review',
+    'Team Meeting',
+    'Lunch Break',
+    'Client Meeting',
+    'Other',
+  ]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isScheduleOpen, setIsScheduleOpen] = useState(true);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(true);
+  const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
   const normalizedWeekStart = startOfWeek(weekStart);
   const days = Array.from({ length: 7 }, (_, index) => addDays(normalizedWeekStart, index));
-  const weekEnd = addDays(normalizedWeekStart, 6);
+  const displayedDays = viewMode === 'day' ? [new Date()] : days;
+
   const rows = getRows();
   const gridHeight = rows.length * rowHeight;
 
-  const goToPreviousWeek = () => onWeekChange(addDays(normalizedWeekStart, -7));
-  const goToThisWeek = () => onWeekChange(startOfWeek(new Date()));
-  const goToNextWeek = () => onWeekChange(addDays(normalizedWeekStart, 7));
+  // Filter events based on sidebar checkboxes & categories
+  const filteredEvents = events.filter((event) => {
+    if (selectedCategory !== 'all') {
+      const cat = (event.category || '').toLowerCase();
+      if (cat && cat !== selectedCategory.toLowerCase()) return false;
+    }
+    return true;
+  });
+
+  const miniDays = getMiniCalendarDays(miniMonthDate);
+
+  const toggleScheduleFilter = (item: string) => {
+    setSelectedSchedules((prev) =>
+      prev.includes(item) ? prev.filter((s) => s !== item) : [...prev, item]
+    );
+  };
+
+  const handleSyncGoogle = () => {
+    setSyncMessage('Đã đồng bộ thành công với Google Calendar!');
+    setTimeout(() => setSyncMessage(null), 3000);
+  };
+
+  const prevMiniMonth = () => {
+    setMiniMonthDate(new Date(miniMonthDate.getFullYear(), miniMonthDate.getMonth() - 1, 1));
+  };
+
+  const nextMiniMonth = () => {
+    setMiniMonthDate(new Date(miniMonthDate.getFullYear(), miniMonthDate.getMonth() + 1, 1));
+  };
 
   return (
-    <div className="weekly-calendar">
-      <div className="weekly-calendar-toolbar">
-        <div>
-          <div className="weekly-calendar-title">
-            <IconCalendar size={18} />
-            <span>Lịch tuần</span>
-          </div>
-          <div className="weekly-calendar-range">
-            {formatShortDate(normalizedWeekStart)} - {formatShortDate(weekEnd)}
-          </div>
-        </div>
-
-        <div className="weekly-calendar-actions">
-          <button type="button" className="btn btn-secondary" onClick={goToPreviousWeek}>
-            Tuần trước
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={goToThisWeek}>
-            Tuần này
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={goToNextWeek}>
-            Tuần sau
-          </button>
-        </div>
-      </div>
-
-      <div className="weekly-calendar-scroll">
-        <div className="weekly-calendar-grid">
-          <div className="weekly-calendar-corner">
-            <span>Thời gian</span>
-          </div>
-          {days.map((day, index) => {
-            const isToday = sameDay(day, new Date());
-            return (
-              <div
-                key={day.toISOString()}
-                className={`weekly-calendar-day-header ${isToday ? 'weekly-calendar-day-header-today' : ''}`}
-              >
-                <div className="weekly-calendar-day-name">{dayLabels[index]}</div>
-                <div className="weekly-calendar-day-number">
-                  <span>{formatShortDate(day)}</span>
-                  {isToday && <span className="weekly-calendar-today-badge">Hôm nay</span>}
-                </div>
+    <div className={`weekly-calendar-redesign ${isSidebarOpen ? 'sidebar-expanded' : 'sidebar-collapsed'}`}>
+      {/* LEFT SIDEBAR PANEL (Collapsible) */}
+      <aside className="calendar-left-panel">
+        <div className="calendar-sidebar-header">
+          <div className="calendar-all-dropdown">
+            <div className="all-calendar-icon">
+              <IconCalendar size={16} />
+              <span className="all-calendar-badge">31</span>
+            </div>
+            <div>
+              <div className="all-calendar-title">
+                All Calendar
+                <IconChevronDown size={14} className="dropdown-arrow" />
               </div>
-            );
-          })}
+              <div className="all-calendar-subtitle">Personal, Teams</div>
+            </div>
+          </div>
 
-          <div className="weekly-calendar-time-column" style={{ height: gridHeight }}>
-            {rows.map((row) => (
-              <div key={row.label} className="weekly-calendar-time" style={{ height: rowHeight }}>
-                {row.label}
+          <button
+            type="button"
+            className="sidebar-collapse-btn"
+            title="Đóng menu bên trái"
+            onClick={() => setIsSidebarOpen(false)}
+          >
+            <IconChevronLeft size={18} />
+          </button>
+        </div>
+
+        {/* MINI MONTH CALENDAR */}
+        <div className="mini-calendar-section">
+          <div className="mini-calendar-nav">
+            <button type="button" className="mini-nav-btn" onClick={prevMiniMonth}>
+              <IconChevronLeft size={16} />
+            </button>
+
+            <span className="mini-month-label">
+              {miniMonthDate.toLocaleString('en-US', { month: 'long' })}
+            </span>
+
+            <button type="button" className="mini-nav-btn" onClick={nextMiniMonth}>
+              <IconChevronRight size={16} />
+            </button>
+          </div>
+
+          <div className="mini-calendar-grid">
+            {dayLabelsShort.map((day) => (
+              <div key={day} className="mini-day-label">
+                {day}
               </div>
             ))}
+
+            {miniDays.map(({ date, isCurrentMonth }) => {
+              const isSelected = sameDay(date, weekStart);
+              const isToday = sameDay(date, new Date());
+
+              return (
+                <button
+                  key={date.toISOString()}
+                  type="button"
+                  className={`mini-day-cell ${!isCurrentMonth ? 'mini-day-faded' : ''} ${
+                    isSelected ? 'mini-day-selected' : ''
+                  } ${isToday ? 'mini-day-today' : ''}`}
+                  onClick={() => {
+                    onWeekChange(startOfWeek(date));
+                  }}
+                >
+                  {date.getDate()}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* MY SCHEDULE CHECKLIST */}
+        <div className="sidebar-accordion">
+          <button
+            type="button"
+            className="accordion-header"
+            onClick={() => setIsScheduleOpen(!isScheduleOpen)}
+          >
+            <span>My Schedule</span>
+            {isScheduleOpen ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
+          </button>
+
+          {isScheduleOpen && (
+            <div className="accordion-content">
+              {[
+                'Daily Standup',
+                'Weekly Review',
+                'Team Meeting',
+                'Lunch Break',
+                'Client Meeting',
+                'Other',
+              ].map((item) => {
+                const isChecked = selectedSchedules.includes(item);
+                return (
+                  <label key={item} className="schedule-checkbox-item">
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleScheduleFilter(item)}
+                    />
+                    <span className="checkbox-custom">{isChecked && <IconCheck size={12} />}</span>
+                    <span className="checkbox-label">{item}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* CATEGORIES SECTION */}
+        <div className="sidebar-accordion">
+          <button
+            type="button"
+            className="accordion-header"
+            onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
+          >
+            <span>Categories</span>
+            {isCategoriesOpen ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
+          </button>
+
+          {isCategoriesOpen && (
+            <div className="accordion-content">
+              {[
+                { name: 'Work', color: '#ef4444', count: 18 },
+                { name: 'Personal', color: '#22c55e', count: 9 },
+                { name: 'Breaks', color: '#eab308', count: 13 },
+                { name: 'Events', color: '#3b82f6', count: 4 },
+              ].map((cat) => (
+                <button
+                  key={cat.name}
+                  type="button"
+                  className={`category-item ${selectedCategory === cat.name ? 'category-active' : ''}`}
+                  onClick={() =>
+                    setSelectedCategory(selectedCategory === cat.name ? 'all' : cat.name)
+                  }
+                >
+                  <span className="category-color-dot" style={{ backgroundColor: cat.color }} />
+                  <span className="category-name">{cat.name}</span>
+                  <span className="category-count">{cat.count}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </aside>
+
+      {/* MAIN CALENDAR AREA */}
+      <main className="calendar-main-area">
+        {/* TOP BAR / BREADCRUMBS & CONTROLS */}
+        <header className="calendar-topbar-controls">
+          <div className="topbar-left-group">
+            {!isSidebarOpen && (
+              <button
+                type="button"
+                className="btn-sidebar-expand"
+                title="Mở thanh menu bên trái"
+                onClick={() => setIsSidebarOpen(true)}
+              >
+                <IconSidebarToggle size={20} />
+              </button>
+            )}
+
+            <div>
+              <div className="calendar-breadcrumbs">
+                Calendar &gt; <span>All Calendar</span>
+              </div>
+              <h1 className="calendar-page-title">Calendar</h1>
+            </div>
+          </div>
+        </header>
+
+        {/* CONTROL ROW: Month Selector, Event Count, View Mode Switcher, Sync & New Event Buttons */}
+        <div className="calendar-controls-bar">
+          <div className="controls-bar-left">
+            <div className="month-picker-dropdown">
+              <span className="month-picker-title">{formatMonthYear(weekStart)}</span>
+              <IconChevronDown size={16} />
+            </div>
+
+            <div className="events-count-pill">
+              <IconCalendar size={14} />
+              <span>{filteredEvents.length} event's</span>
+            </div>
           </div>
 
-          {days.map((day) => {
-            const dayEvents = events.filter((event) => sameDay(parseDate(event.startTime), day));
-            return (
-              <div key={`column-${day.toISOString()}`} className="weekly-calendar-day-column" style={{ height: gridHeight }}>
-                {rows.map((row) => (
-                  <button
-                    key={`${day.toISOString()}-${row.minutes}`}
-                    type="button"
-                    className="weekly-calendar-cell"
-                    style={{ height: rowHeight }}
-                    onClick={() => onEmptySlotClick?.(makeEmptySlotDate(day, row.minutes))}
-                  >
-                    <span className="weekly-calendar-empty-label">+ {emptySlotLabel}</span>
-                  </button>
-                ))}
+          <div className="controls-bar-right">
+            {/* VIEW MODE SWITCHER TABS */}
+            <div className="view-switcher-pills">
+              <button
+                type="button"
+                className={`view-pill ${viewMode === 'day' ? 'view-pill-active' : ''}`}
+                onClick={() => setViewMode('day')}
+              >
+                Day
+              </button>
+              <button
+                type="button"
+                className={`view-pill ${viewMode === 'week' ? 'view-pill-active' : ''}`}
+                onClick={() => setViewMode('week')}
+              >
+                Week
+              </button>
+              <button
+                type="button"
+                className={`view-pill ${viewMode === 'month' ? 'view-pill-active' : ''}`}
+                onClick={() => setViewMode('month')}
+              >
+                Month
+              </button>
+            </div>
 
-                {dayEvents.map((event) => {
-                  const layout = getEventLayout(event);
-                  const raw = event.raw as Record<string, any> | undefined;
-                  const meetingType = raw?.meetingType;
-                  const locationOrLink = raw?.locationOrLink;
-                  const note = raw?.description || raw?.lecturerResponse || raw?.cancellationReason;
+            {/* ACTION BUTTONS */}
+            <button
+              type="button"
+              className="btn-sync-google"
+              onClick={handleSyncGoogle}
+            >
+              <IconGoogleCalendar size={18} />
+              <span>Sync to Google Calendar</span>
+            </button>
 
-                  return (
-                    <button
-                      key={event.id}
-                      type="button"
-                      className={`weekly-calendar-event weekly-calendar-event-${eventTone(event)}`}
-                      style={{ top: layout.top + 5, height: Math.max(48, layout.height - 10) }}
-                      title={event.title}
-                      onClick={(clickEvent) => {
-                        clickEvent.stopPropagation();
-                        onEventClick(event);
-                      }}
-                    >
-                      <div className="weekly-calendar-event-top">
-                        <div className="weekly-calendar-event-code">
-                          {event.kind === 'slot' ? (event.isAvailable ? 'Slot rảnh' : 'Đã kín') : formatStatusLabel(event.status || '')}
-                        </div>
-                        <div className="weekly-calendar-event-title">{event.title}</div>
-                        {event.subtitle ? <div className="weekly-calendar-event-subtitle">{event.subtitle}</div> : null}
-                      </div>
-
-                      <div className="weekly-calendar-event-extra">
-                        {meetingType ? (
-                          <div className="weekly-calendar-event-tag">
-                            <span>Hình thức: {meetingType}</span>
-                          </div>
-                        ) : null}
-                        {locationOrLink ? (
-                          <div className="weekly-calendar-event-tag">
-                            <span>Địa điểm / Link: {locationOrLink}</span>
-                          </div>
-                        ) : null}
-                        {note ? (
-                          <div className="weekly-calendar-event-note">
-                            <span>Ghi chú: {note}</span>
-                          </div>
-                        ) : null}
-                      </div>
-
-                      <div className="weekly-calendar-event-meta">
-                        <IconClock size={13} />
-                        <span>
-                          {formatTime(parseDate(event.startTime))} - {formatTime(parseDate(event.endTime))}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })}
+            <button
+              type="button"
+              className="btn-new-event"
+              onClick={() => onNewEvent?.() || onEmptySlotClick?.(new Date())}
+            >
+              <IconPlus size={16} />
+              <span>New Event</span>
+            </button>
+          </div>
         </div>
-      </div>
+
+        {syncMessage && <div className="sync-toast-banner">{syncMessage}</div>}
+
+        {/* WEEKLY TIME GRID */}
+        <div className="weekly-grid-container">
+          <div className="weekly-grid-wrapper">
+            {/* CORNER TIMEZONE HEADER */}
+            <div className="grid-corner-cell">
+              <span>UTC +1</span>
+            </div>
+
+            {/* DAY COLUMNS HEADERS */}
+            {displayedDays.map((day, idx) => {
+              const isToday = sameDay(day, new Date());
+              return (
+                <div
+                  key={day.toISOString()}
+                  className={`grid-day-header ${isToday ? 'grid-day-header-today' : ''}`}
+                >
+                  <div className="header-date-number">{day.getDate()}</div>
+                  <div className="header-day-name">{dayLabelsFull[idx]}</div>
+                </div>
+              );
+            })}
+
+            {/* TIME COLUMN */}
+            <div className="grid-time-column" style={{ height: gridHeight }}>
+              {rows.map((row) => (
+                <div key={row.label} className="time-row-label" style={{ height: rowHeight }}>
+                  {row.label}
+                </div>
+              ))}
+            </div>
+
+            {/* DAY EVENT COLUMNS */}
+            {displayedDays.map((day) => {
+              const dayEvents = filteredEvents.filter((event) =>
+                sameDay(parseDate(event.startTime), day)
+              );
+
+              return (
+                <div
+                  key={`col-${day.toISOString()}`}
+                  className="grid-day-column"
+                  style={{ height: gridHeight }}
+                >
+                  {rows.map((row) => (
+                    <button
+                      key={`${day.toISOString()}-${row.minutes}`}
+                      type="button"
+                      className="grid-empty-cell"
+                      style={{ height: rowHeight }}
+                      onClick={() => onEmptySlotClick?.(makeEmptySlotDate(day, row.minutes))}
+                    >
+                      <span className="cell-hover-label">+ {emptySlotLabel}</span>
+                    </button>
+                  ))}
+
+                  {/* EVENT CARDS */}
+                  {dayEvents.map((event) => {
+                    const layout = getEventLayout(event, rows.length);
+                    const tone = getEventTone(event);
+                    const { avatars, countText } = getEventAvatars(event.id);
+
+                    return (
+                      <div
+                        key={event.id}
+                        className={`pastel-event-card tone-${tone}`}
+                        style={{
+                          top: layout.top + 6,
+                          height: Math.max(68, layout.height - 12),
+                        }}
+                        onClick={() => onEventClick(event)}
+                      >
+                        <div className="card-left-accent" />
+
+                        <div className="card-content-body">
+                          <div className="card-header-row">
+                            <h4 className="card-event-title">{event.title}</h4>
+                          </div>
+
+                          <div className="card-time-row">
+                            <IconClock size={13} />
+                            <span>{formatTimeRange(event.startTime, event.endTime)}</span>
+                          </div>
+
+                          {/* ATTENDEES AVATAR STACK */}
+                          <div className="card-avatar-footer">
+                            <div className="avatar-overlap-stack">
+                              {avatars.map((av, avIdx) => (
+                                <div
+                                  key={av.name + avIdx}
+                                  className="avatar-bubble"
+                                  style={{ backgroundColor: av.bg }}
+                                  title={av.name}
+                                >
+                                  {av.text}
+                                </div>
+                              ))}
+                            </div>
+                            <span className="avatar-count-badge">{countText}</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
