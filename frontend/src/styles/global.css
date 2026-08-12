@@ -554,6 +554,225 @@ input:focus, textarea:focus, select:focus, .custom-select:focus {
 }
 
 /* ===================================================================
+   WEEKLY CALENDAR
+   =================================================================== */
+
+.weekly-calendar {
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+
+.weekly-calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: #ffffff;
+  flex-wrap: wrap;
+}
+
+.weekly-calendar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.weekly-calendar-range {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.weekly-calendar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.weekly-calendar-actions .btn {
+  padding: 7px 12px;
+  font-size: 0.82rem;
+}
+
+.weekly-calendar-scroll {
+  overflow-x: auto;
+  background: #f8fafc;
+}
+
+.weekly-calendar-grid {
+  display: grid;
+  grid-template-columns: 72px repeat(7, minmax(128px, 1fr));
+  min-width: 980px;
+}
+
+.weekly-calendar-corner,
+.weekly-calendar-day-header,
+.weekly-calendar-time,
+.weekly-calendar-cell {
+  border-right: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.weekly-calendar-corner {
+  background: #f1f5f9;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+.weekly-calendar-day-header {
+  min-height: 58px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 10px;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-align: center;
+}
+
+.weekly-calendar-day-header strong {
+  color: var(--text-primary);
+  font-size: 0.92rem;
+}
+
+.weekly-calendar-time {
+  min-height: 82px;
+  background: #f8fafc;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.weekly-calendar-cell {
+  min-height: 82px;
+  background: #ffffff;
+  color: var(--text-secondary);
+  padding: 5px;
+  cursor: pointer;
+  text-align: left;
+  border-top: 0;
+  border-left: 0;
+  transition: background-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.weekly-calendar-cell:hover {
+  background: #eff6ff;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.18);
+}
+
+.weekly-calendar-cell.has-events {
+  background: #f8fafc;
+}
+
+.weekly-calendar-empty-label {
+  display: inline-flex;
+  opacity: 0;
+  font-size: 0.72rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.weekly-calendar-cell:hover .weekly-calendar-empty-label {
+  opacity: 1;
+}
+
+.weekly-calendar-event-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.weekly-calendar-event {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  padding: 6px 7px;
+  min-height: 48px;
+  overflow: hidden;
+}
+
+.weekly-calendar-event-title {
+  color: var(--text-primary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weekly-calendar-event-meta,
+.weekly-calendar-event-status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  line-height: 1.25;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weekly-calendar-event-status {
+  font-weight: 600;
+}
+
+.weekly-calendar-event-confirmed {
+  background: #ecfdf5;
+  border-color: #bbf7d0;
+}
+
+.weekly-calendar-event-pending {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.weekly-calendar-event-muted {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.weekly-calendar-event-neutral {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.weekly-calendar-event-slot-open {
+  background: #eefcf6;
+  border-color: #86efac;
+}
+
+.weekly-calendar-event-slot-booked {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
+
+.weekly-calendar-more {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0 3px;
+}
+
+/* ===================================================================
    RESPONSIVE LAYOUT BREAKPOINTS
    =================================================================== */
 

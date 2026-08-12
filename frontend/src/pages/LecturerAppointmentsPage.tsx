@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import { formatDateTime } from '../utils/format';
-import type { AppointmentResponseDto } from '../types/api';
+import type { AppointmentResponseDto, SlotResponseDto } from '../types/api';
 import { StatusBadge } from '../components/StatusBadge';
+import { WeeklyCalendar, type CalendarEvent } from '../components/WeeklyCalendar';
 import {
   IconFileText,
   IconBookmark,
@@ -13,21 +14,38 @@ import {
   IconCheck,
   IconClose,
   IconHistory,
+  IconPlus,
+  IconAlert,
 } from '../components/Icons';
 
 export function LecturerAppointmentsPage() {
   const [items, setItems] = useState<AppointmentResponseDto[]>([]);
+  const [slots, setSlots] = useState<SlotResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
+  const [weekStart, setWeekStart] = useState(() => new Date());
   const [busyId, setBusyId] = useState<number | null>(null);
   const [activeItem, setActiveItem] = useState<AppointmentResponseDto | null>(null);
   const [actionType, setActionType] = useState<'Approved' | 'Rejected' | 'Cancelled'>('Approved');
   const [responseMsg, setResponseMsg] = useState('Thầy đồng ý phê duyệt lịch hẹn, em đến đúng giờ nhé.');
+  const [slotModal, setSlotModal] = useState<{
+    startTime: string;
+    endTime: string;
+    meetingType: string;
+    locationOrLink: string;
+  } | null>(null);
+  const [slotError, setSlotError] = useState('');
+  const [slotBusy, setSlotBusy] = useState(false);
 
   const load = async () => {
     setLoading(true);
     try {
-      setItems(await api.lecturerAppointments());
+      const [appointmentResult, slotResult] = await Promise.all([
+        api.lecturerAppointments(),
+        api.mySlots(),
+      ]);
+      setItems(appointmentResult);
+      setSlots(slotResult);
     } finally {
       setLoading(false);
     }
@@ -49,6 +67,28 @@ export function LecturerAppointmentsPage() {
   });
 
   const displayItems = activeTab === 'current' ? currentItems : historyItems;
+  const calendarEvents: CalendarEvent<AppointmentResponseDto | SlotResponseDto>[] = [
+    ...slots.map((slot) => ({
+      id: `slot-${slot.availabilitySlotId}`,
+      kind: 'slot' as const,
+      title: slot.isAvailable ? 'Slot rảnh' : 'Slot đã được đặt',
+      subtitle: slot.meetingType,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      isAvailable: slot.isAvailable,
+      raw: slot,
+    })),
+    ...items.map((item) => ({
+      id: `appointment-${item.appointmentId}`,
+      kind: 'appointment' as const,
+      title: item.topic,
+      subtitle: item.studentName,
+      startTime: item.startTime,
+      endTime: item.endTime,
+      status: item.status,
+      raw: item,
+    })),
+  ];
 
   const openDecisionModal = (item: AppointmentResponseDto, status: 'Approved' | 'Rejected') => {
     setActiveItem(item);
@@ -60,6 +100,51 @@ export function LecturerAppointmentsPage() {
     setActiveItem(item);
     setActionType('Cancelled');
     setResponseMsg('Thầy bận lịch đột xuất nên xin phép hủy lịch hẹn này, em thông cảm nhé.');
+  };
+
+  const toDateTimeLocalValue = (date: Date) => {
+    const pad = (value: number) => String(value).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
+  const openCreateSlotModal = (start: Date) => {
+    const end = new Date(start);
+    end.setMinutes(end.getMinutes() + 60);
+    setSlotError('');
+    setSlotModal({
+      startTime: toDateTimeLocalValue(start),
+      endTime: toDateTimeLocalValue(end),
+      meetingType: 'Offline',
+      locationOrLink: 'Phòng 302-A1',
+    });
+  };
+
+  const handleCalendarEventClick = (event: CalendarEvent) => {
+    if (event.kind === 'appointment') {
+      setActiveItem(event.raw as AppointmentResponseDto);
+      setActionType('Approved');
+      setResponseMsg('Thầy đồng ý phê duyệt lịch hẹn, em đến đúng giờ nhé.');
+      return;
+    }
+
+    const slot = event.raw as SlotResponseDto;
+    alert(`${slot.isAvailable ? 'Slot còn trống' : 'Slot đã có sinh viên đặt'}\n${formatDateTime(slot.startTime)} - ${formatDateTime(slot.endTime)}\n${slot.meetingType}${slot.locationOrLink ? ` (${slot.locationOrLink})` : ''}`);
+  };
+
+  const handleCreateSlotSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!slotModal) return;
+    setSlotBusy(true);
+    setSlotError('');
+    try {
+      await api.createSlot(slotModal);
+      setSlotModal(null);
+      await load();
+    } catch (err) {
+      setSlotError(err instanceof Error ? err.message : 'Không thể tạo khung giờ rảnh.');
+    } finally {
+      setSlotBusy(false);
+    }
   };
 
   const handleDecisionSubmit = async () => {
@@ -176,6 +261,15 @@ export function LecturerAppointmentsPage() {
       </div>
 
       {/* Appointment Cards List */}
+      <WeeklyCalendar
+        events={calendarEvents}
+        weekStart={weekStart}
+        onWeekChange={setWeekStart}
+        onEventClick={handleCalendarEventClick}
+        onEmptySlotClick={openCreateSlotModal}
+        emptySlotLabel="Tạo slot"
+      />
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {displayItems.map((item) => (
           <div key={item.appointmentId} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -331,6 +425,75 @@ export function LecturerAppointmentsPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {slotModal && (
+        <div className="modal-overlay">
+          <form className="modal-content" onSubmit={handleCreateSlotSubmit}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <IconPlus size={20} style={{ color: 'var(--accent)' }} />
+              <span>Tạo slot rảnh từ lịch tuần</span>
+            </h2>
+
+            {slotError ? (
+              <div className="badge badge-danger" style={{ padding: 12, width: '100%', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <IconAlert size={16} />
+                <span>{slotError}</span>
+              </div>
+            ) : null}
+
+            <div className="grid-2" style={{ gap: 14, marginBottom: 16 }}>
+              <label className="field">
+                <span>Bắt đầu</span>
+                <input
+                  type="datetime-local"
+                  value={slotModal.startTime}
+                  onChange={(e) => setSlotModal((prev) => prev ? { ...prev, startTime: e.target.value } : prev)}
+                  required
+                />
+              </label>
+
+              <label className="field">
+                <span>Kết thúc</span>
+                <input
+                  type="datetime-local"
+                  value={slotModal.endTime}
+                  onChange={(e) => setSlotModal((prev) => prev ? { ...prev, endTime: e.target.value } : prev)}
+                  required
+                />
+              </label>
+
+              <label className="field">
+                <span>Hình thức</span>
+                <select
+                  value={slotModal.meetingType}
+                  onChange={(e) => setSlotModal((prev) => prev ? { ...prev, meetingType: e.target.value } : prev)}
+                >
+                  <option value="Offline">Offline</option>
+                  <option value="Online">Online</option>
+                </select>
+              </label>
+
+              <label className="field">
+                <span>Địa điểm hoặc link</span>
+                <input
+                  value={slotModal.locationOrLink}
+                  onChange={(e) => setSlotModal((prev) => prev ? { ...prev, locationOrLink: e.target.value } : prev)}
+                  placeholder="Phòng 302-A1 hoặc link Meet"
+                />
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setSlotModal(null)}>
+                Hủy bỏ
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={slotBusy}>
+                {slotBusy ? 'Đang lưu...' : 'Tạo slot'}
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

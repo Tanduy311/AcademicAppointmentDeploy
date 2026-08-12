@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { formatDateTime } from '../utils/format';
 import type { AppointmentResponseDto } from '../types/api';
 import { StatusBadge } from '../components/StatusBadge';
+import { WeeklyCalendar, type CalendarEvent } from '../components/WeeklyCalendar';
 import {
   IconBookmark,
   IconTeacher,
@@ -18,9 +20,11 @@ import {
 } from '../components/Icons';
 
 export function StudentAppointmentsPage() {
+  const navigate = useNavigate();
   const [items, setItems] = useState<AppointmentResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
+  const [weekStart, setWeekStart] = useState(() => new Date());
   const [detailLoadingId, setDetailLoadingId] = useState<number | null>(null);
   
   // Separate Modal States: 'view' | 'cancel' | null
@@ -59,6 +63,16 @@ export function StudentAppointmentsPage() {
   });
 
   const displayItems = activeTab === 'current' ? currentItems : historyItems;
+  const calendarEvents: CalendarEvent<AppointmentResponseDto>[] = items.map((item) => ({
+    id: `appointment-${item.appointmentId}`,
+    kind: 'appointment',
+    title: item.topic,
+    subtitle: item.lecturerName,
+    startTime: item.startTime,
+    endTime: item.endTime,
+    status: item.status,
+    raw: item,
+  }));
 
   const openViewModal = async (item: AppointmentResponseDto) => {
     setDetailLoadingId(item.appointmentId);
@@ -75,6 +89,10 @@ export function StudentAppointmentsPage() {
   const openCancelModal = (item: AppointmentResponseDto) => {
     setReason('Em bận đột xuất lịch học trên lớp.');
     setActiveModal({ item, mode: 'cancel' });
+  };
+
+  const handleCalendarEventClick = (event: CalendarEvent) => {
+    openViewModal(event.raw as AppointmentResponseDto);
   };
 
   const handleCancelSubmit = async () => {
@@ -188,6 +206,15 @@ export function StudentAppointmentsPage() {
       </div>
 
       {/* Appointment Cards List */}
+      <WeeklyCalendar
+        events={calendarEvents}
+        weekStart={weekStart}
+        onWeekChange={setWeekStart}
+        onEventClick={handleCalendarEventClick}
+        onEmptySlotClick={() => navigate('/app/lecturers')}
+        emptySlotLabel="Tìm giảng viên"
+      />
+
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {displayItems.map((item) => (
           <div key={item.appointmentId} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
