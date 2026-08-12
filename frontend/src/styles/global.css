@@ -82,24 +82,40 @@ button, input, textarea, select {
    =================================================================== */
 
 .app-shell {
-  display: grid;
-  grid-template-columns: 280px 1fr;
   min-height: 100vh;
+  position: relative;
+  background: var(--bg-main, #f8fafc);
 }
 
 .sidebar {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid var(--border-subtle);
-  padding: 24px 20px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  height: 100vh;
+  background: #ffffff;
+  border-right: 1px solid var(--border-subtle, #e2e8f0);
+  padding: 24px 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  z-index: 20;
+  z-index: 100;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s ease;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 1px 0 10px rgba(0, 0, 0, 0.03);
+}
+
+.main {
+  margin-left: 280px;
+  min-height: 100vh;
+  transition: margin-left 0.3s cubic-bezier(0.16, 1, 0.3, 1), width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: calc(100% - 280px);
 }
 
 .brand-section {
@@ -1220,34 +1236,15 @@ input:focus, textarea:focus, select:focus, .custom-select:focus {
    LAYOUT & SHELL STRUCTURE
    =================================================================== */
 
-.app-shell {
-  display: grid;
-  grid-template-columns: 280px 1fr;
-  min-height: 100vh;
-  transition: grid-template-columns 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow-x: hidden;
+.app-shell-collapsed .sidebar {
+  width: 80px;
+  padding: 20px 8px;
+  align-items: center;
 }
 
-.app-shell-collapsed {
-  grid-template-columns: 80px 1fr;
-}
-
-.sidebar {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-right: 1px solid var(--border-subtle);
-  padding: 24px 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  z-index: 20;
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
-  box-sizing: border-box;
+.app-shell-collapsed .main {
+  margin-left: 80px;
+  width: calc(100% - 80px);
 }
 
 .brand-section {
