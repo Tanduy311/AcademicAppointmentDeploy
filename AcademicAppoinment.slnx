@@ -1,4 +1,4 @@
 <Solution>
-  <Project Path="AcademicAppoinment.csproj" />
-  <Project Path="tests\AcademicAppoinment.Tests\AcademicAppoinment.Tests.csproj" />
+  <Project Path="backend\AcademicAppoinment\AcademicAppoinment.csproj" />
+  <Project Path="backend\tests\AcademicAppoinment.Tests\AcademicAppoinment.Tests.csproj" />
 </Solution>

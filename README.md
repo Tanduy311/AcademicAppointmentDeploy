@@ -1,38 +1,42 @@
-## 🌿 Quy tắc làm việc với Git
+## Project Structure
 
-### Tạo branch mới trước khi code
-
-```bash
-git checkout -b feature/ten-chuc-nang
+```text
+AcademicAppointment/
+  backend/
+    AcademicAppoinment/
+    tests/
+  frontend/
+  .github/
+  README.md
 ```
 
-### Commit thường xuyên
+## Backend
+
+Backend source code is in `backend/AcademicAppoinment/`.
+
+Run tests:
 
 ```bash
-git add .
-git commit -m "Add: mô tả ngắn chức năng"
-git push origin feature/ten-chuc-nang
+dotnet test AcademicAppoinment.slnx
 ```
 
-### Tạo Pull Request để merge vào main
+Run backend locally:
 
-Vào GitHub → **Pull Requests** → **New Pull Request** → chọn branch của bạn → nhờ người khác review trước khi merge.
+```bash
+dotnet run --project backend/AcademicAppoinment/AcademicAppoinment.csproj
+```
 
-### Quy tắc đặt tên branch
+Publish backend:
 
-| Loại | Ví dụ |
-|------|-------|
-| Tính năng mới | `feature/login` |
-| Sửa lỗi | `fix/loi-dang-nhap` |
-| Database | `db/them-bang-orders` |
-
----
+```bash
+dotnet publish backend/AcademicAppoinment/AcademicAppoinment.csproj -c Release -o ./publish
+```
 
 ## Frontend
 
-Frontend nằm trong thư mục `frontend/`.
+Frontend source code is in `frontend/`.
 
-Chạy local:
+Run locally:
 
 ```bash
 cd frontend
@@ -40,8 +44,14 @@ npm install
 npm run dev
 ```
 
-Nếu backend chạy ở port khác, set thêm file `.env`:
+If backend uses a different API URL, create `frontend/.env`:
 
 ```bash
 VITE_API_BASE_URL=http://localhost:xxxx
 ```
+
+## Deployment
+
+The GitHub Actions workflow deploys only the backend to MonsterASP. It publishes the backend project into `./publish` and uploads that folder to `/wwwroot/` via FTP.
+
+Frontend deployment should use `frontend/` as the project/root directory, for example on Vercel.
