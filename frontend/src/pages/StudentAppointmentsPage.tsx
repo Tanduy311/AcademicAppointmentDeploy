@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { formatDateTime } from '../utils/format';
-import type { AppointmentResponseDto } from '../types/api';
+import type { AppointmentResponseDto, LecturerListItemDto, SlotResponseDto } from '../types/api';
 import { StatusBadge } from '../components/StatusBadge';
 import { WeeklyCalendar, type CalendarEvent } from '../components/WeeklyCalendar';
 import {
@@ -13,7 +13,6 @@ import {
   IconChat,
   IconClose,
   IconFileText,
-  IconArrowRight,
   IconAlert,
   IconCheck,
   IconHistory,
@@ -22,9 +21,16 @@ import {
 export function StudentAppointmentsPage() {
   const navigate = useNavigate();
   const [items, setItems] = useState<AppointmentResponseDto[]>([]);
+  const [lecturers, setLecturers] = useState<LecturerListItemDto[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<SlotResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [weekStart, setWeekStart] = useState(() => new Date());
+  const [calendarKindFilter, setCalendarKindFilter] = useState<'all' | 'appointments' | 'slots'>('all');
+  const [lecturerFilter, setLecturerFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [meetingTypeFilter, setMeetingTypeFilter] = useState('all');
   const [detailLoadingId, setDetailLoadingId] = useState<number | null>(null);
   
   // Separate Modal States: 'view' | 'cancel' | null
@@ -39,7 +45,24 @@ export function StudentAppointmentsPage() {
   const load = async () => {
     setLoading(true);
     try {
-      setItems(await api.myAppointments());
+      const [appointmentResult, lecturerResult] = await Promise.all([
+        api.myAppointments(),
+        api.lecturers(),
+      ]);
+      setItems(appointmentResult);
+      setLecturers(lecturerResult);
+
+      const lecturerDetails = await Promise.allSettled(
+        lecturerResult
+          .filter((lecturer) => lecturer.upcomingSlotCount > 0)
+          .map((lecturer) => api.lecturerById(lecturer.lecturerId))
+      );
+      setAvailableSlots(
+        lecturerDetails
+          .filter((result) => result.status === 'fulfilled')
+          .flatMap((result) => result.value.upcomingSlots)
+          .filter((slot) => slot.isAvailable)
+      );
     } finally {
       setLoading(false);
     }
@@ -63,16 +86,47 @@ export function StudentAppointmentsPage() {
   });
 
   const displayItems = activeTab === 'current' ? currentItems : historyItems;
-  const calendarEvents: CalendarEvent<AppointmentResponseDto>[] = items.map((item) => ({
-    id: `appointment-${item.appointmentId}`,
-    kind: 'appointment',
-    title: item.topic,
-    subtitle: item.lecturerName,
-    startTime: item.startTime,
-    endTime: item.endTime,
-    status: item.status,
-    raw: item,
-  }));
+  const calendarEvents: CalendarEvent<AppointmentResponseDto | SlotResponseDto>[] = useMemo(() => {
+    const appointmentEvents: CalendarEvent<AppointmentResponseDto>[] = items.map((item) => ({
+      id: `appointment-${item.appointmentId}`,
+      kind: 'appointment',
+      title: item.topic,
+      subtitle: item.lecturerName,
+      startTime: item.startTime,
+      endTime: item.endTime,
+      status: item.status,
+      raw: item,
+    }));
+
+    const slotEvents: CalendarEvent<SlotResponseDto>[] = availableSlots.map((slot) => ({
+      id: `slot-${slot.availabilitySlotId}`,
+      kind: 'slot',
+      title: 'Slot rảnh',
+      subtitle: `${slot.lecturerName}${slot.department ? ` - ${slot.department}` : ''}`,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      isAvailable: slot.isAvailable,
+      raw: slot,
+    }));
+
+    return [...appointmentEvents, ...slotEvents].filter((event) => {
+      if (calendarKindFilter === 'appointments' && event.kind !== 'appointment') return false;
+      if (calendarKindFilter === 'slots' && event.kind !== 'slot') return false;
+
+      const lecturerId = String((event.raw as AppointmentResponseDto | SlotResponseDto).lecturerId);
+      if (lecturerFilter !== 'all' && lecturerId !== lecturerFilter) return false;
+
+      const meetingType = (event.raw as AppointmentResponseDto | SlotResponseDto).meetingType;
+      if (meetingTypeFilter !== 'all' && meetingType !== meetingTypeFilter) return false;
+
+      if (statusFilter !== 'all') {
+        if (event.kind === 'slot') return statusFilter === 'Available';
+        return (event.raw as AppointmentResponseDto).status === statusFilter;
+      }
+
+      return true;
+    });
+  }, [availableSlots, calendarKindFilter, items, lecturerFilter, meetingTypeFilter, statusFilter]);
 
   const openViewModal = async (item: AppointmentResponseDto) => {
     setDetailLoadingId(item.appointmentId);
@@ -92,6 +146,11 @@ export function StudentAppointmentsPage() {
   };
 
   const handleCalendarEventClick = (event: CalendarEvent) => {
+    if (event.kind === 'slot') {
+      navigate(`/app/lecturers/${(event.raw as SlotResponseDto).lecturerId}`);
+      return;
+    }
+
     openViewModal(event.raw as AppointmentResponseDto);
   };
 
@@ -132,7 +191,109 @@ export function StudentAppointmentsPage() {
         </div>
 
         {/* Tab Navigation */}
-        <div style={{ display: 'inline-flex', background: '#f1f5f9', padding: 4, borderRadius: 'var(--radius-md)', gap: 4 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'inline-flex', background: '#f1f5f9', padding: 4, borderRadius: 'var(--radius-md)', gap: 4 }}>
+            <button
+              type="button"
+              className="btn"
+              style={{
+                fontSize: '0.88rem',
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                background: viewMode === 'calendar' ? '#fff' : 'transparent',
+                color: viewMode === 'calendar' ? 'var(--accent)' : 'var(--text-secondary)',
+                fontWeight: viewMode === 'calendar' ? 700 : 500,
+                boxShadow: viewMode === 'calendar' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+              onClick={() => setViewMode('calendar')}
+            >
+              <IconCalendar size={16} />
+              <span>Lịch</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn"
+              style={{
+                fontSize: '0.88rem',
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                background: viewMode === 'list' ? '#fff' : 'transparent',
+                color: viewMode === 'list' ? 'var(--accent)' : 'var(--text-secondary)',
+                fontWeight: viewMode === 'list' ? 700 : 500,
+                boxShadow: viewMode === 'list' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+              onClick={() => setViewMode('list')}
+            >
+              <IconFileText size={16} />
+              <span>Danh sách</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {viewMode === 'calendar' ? (
+        <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <IconCalendar size={18} style={{ color: 'var(--accent)' }} />
+              <span>Bộ lọc lịch tuần</span>
+            </h2>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>
+              {calendarEvents.length} mục đang hiển thị
+            </div>
+          </div>
+
+          <div className="grid-2">
+            <label className="field">
+              <span>Loại lịch</span>
+              <select value={calendarKindFilter} onChange={(event) => setCalendarKindFilter(event.target.value as 'all' | 'appointments' | 'slots')}>
+                <option value="all">Tất cả</option>
+                <option value="appointments">Lịch hẹn của tôi</option>
+                <option value="slots">Slot rảnh của giảng viên</option>
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Giảng viên</span>
+              <select value={lecturerFilter} onChange={(event) => setLecturerFilter(event.target.value)}>
+                <option value="all">Tất cả giảng viên</option>
+                {lecturers.map((lecturer) => (
+                  <option key={lecturer.lecturerId} value={lecturer.lecturerId}>
+                    {lecturer.fullName}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Trạng thái</span>
+              <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+                <option value="all">Tất cả trạng thái</option>
+                <option value="Available">Slot rảnh</option>
+                <option value="Pending">Chờ duyệt</option>
+                <option value="Confirmed">Đã duyệt</option>
+                <option value="Approved">Đã phê duyệt</option>
+                <option value="Cancelled">Đã hủy</option>
+                <option value="Rejected">Từ chối</option>
+              </select>
+            </label>
+
+            <label className="field">
+              <span>Hình thức</span>
+              <select value={meetingTypeFilter} onChange={(event) => setMeetingTypeFilter(event.target.value)}>
+                <option value="all">Tất cả hình thức</option>
+                <option value="Offline">Offline</option>
+                <option value="Online">Online</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      ) : (
+        <div className="panel" style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ display: 'inline-flex', background: '#f1f5f9', padding: 4, borderRadius: 'var(--radius-md)', gap: 4 }}>
           <button
             type="button"
             className="btn"
@@ -203,19 +364,21 @@ export function StudentAppointmentsPage() {
             </span>
           </button>
         </div>
-      </div>
+        </div>
+      )}
 
-      {/* Appointment Cards List */}
-      <WeeklyCalendar
-        events={calendarEvents}
-        weekStart={weekStart}
-        onWeekChange={setWeekStart}
-        onEventClick={handleCalendarEventClick}
-        onEmptySlotClick={() => navigate('/app/lecturers')}
-        emptySlotLabel="Tìm giảng viên"
-      />
+      {viewMode === 'calendar' ? (
+        <WeeklyCalendar
+          events={calendarEvents}
+          weekStart={weekStart}
+          onWeekChange={setWeekStart}
+          onEventClick={handleCalendarEventClick}
+          onEmptySlotClick={() => navigate('/app/lecturers')}
+          emptySlotLabel="Tìm giảng viên"
+        />
+      ) : null}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {viewMode === 'list' ? <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {displayItems.map((item) => (
           <div key={item.appointmentId} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
@@ -303,7 +466,7 @@ export function StudentAppointmentsPage() {
             )}
           </div>
         )}
-      </div>
+      </div> : null}
 
       {/* MODAL 1: VIEW DETAILS ONLY */}
       {activeModal && activeModal.mode === 'view' && (

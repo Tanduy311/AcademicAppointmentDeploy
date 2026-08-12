@@ -1,4 +1,3 @@
-import { Fragment } from 'react';
 import { IconCalendar, IconClock } from './Icons';
 import { formatStatusLabel, parseDate } from '../utils/format';
 
@@ -26,9 +25,14 @@ interface WeeklyCalendarProps {
 }
 
 const dayLabels = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
-const startHour = 7;
-const endHour = 18;
-const slotMinutes = 30;
+const gridStartHour = 7;
+const gridStartMinute = 30;
+const gridEndHour = 17;
+const gridEndMinute = 30;
+const rowMinutes = 60;
+const rowHeight = 126;
+const totalGridMinutes = (gridEndHour * 60 + gridEndMinute) - (gridStartHour * 60 + gridStartMinute);
+const gridStartMinutes = gridStartHour * 60 + gridStartMinute;
 
 function startOfWeek(date: Date) {
   const result = new Date(date);
@@ -45,12 +49,6 @@ function addDays(date: Date, days: number) {
   return result;
 }
 
-function addMinutes(date: Date, minutes: number) {
-  const result = new Date(date);
-  result.setMinutes(result.getMinutes() + minutes);
-  return result;
-}
-
 function sameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
@@ -63,12 +61,19 @@ function formatTime(date: Date) {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
-function getSlotRows() {
-  const rows: Date[] = [];
-  const base = new Date();
-  base.setHours(startHour, 0, 0, 0);
-  for (let minutes = 0; minutes < (endHour - startHour) * 60; minutes += slotMinutes) {
-    rows.push(addMinutes(base, minutes));
+function formatMinutes(minutes: number) {
+  const hour = Math.floor(minutes / 60);
+  const minute = minutes % 60;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+function getRows() {
+  const rows: { label: string; minutes: number }[] = [];
+  for (let minutes = gridStartMinutes; minutes < gridEndHour * 60 + gridEndMinute; minutes += rowMinutes) {
+    rows.push({
+      label: `${formatMinutes(minutes)} - ${formatMinutes(minutes + rowMinutes)}`,
+      minutes,
+    });
   }
   return rows;
 }
@@ -85,14 +90,25 @@ function eventTone(event: CalendarEvent) {
   return 'neutral';
 }
 
-function eventIntersectsSlot(event: CalendarEvent, day: Date, slot: Date) {
+function getEventLayout(event: CalendarEvent) {
   const start = parseDate(event.startTime);
   const end = parseDate(event.endTime);
-  const slotStart = new Date(day);
-  slotStart.setHours(slot.getHours(), slot.getMinutes(), 0, 0);
-  const slotEnd = addMinutes(slotStart, slotMinutes);
+  const startMinutes = start.getHours() * 60 + start.getMinutes();
+  const endMinutes = end.getHours() * 60 + end.getMinutes();
+  const clampedStart = Math.max(startMinutes, gridStartMinutes);
+  const clampedEnd = Math.min(endMinutes, gridEndHour * 60 + gridEndMinute);
+  const visibleMinutes = Math.max(30, clampedEnd - clampedStart);
 
-  return sameDay(start, day) && start < slotEnd && end > slotStart;
+  return {
+    top: ((clampedStart - gridStartMinutes) / totalGridMinutes) * (totalGridMinutes / rowMinutes) * rowHeight,
+    height: (visibleMinutes / rowMinutes) * rowHeight,
+  };
+}
+
+function makeEmptySlotDate(day: Date, rowMinutesValue: number) {
+  const result = new Date(day);
+  result.setHours(Math.floor(rowMinutesValue / 60), rowMinutesValue % 60, 0, 0);
+  return result;
 }
 
 export function WeeklyCalendar({
@@ -105,8 +121,9 @@ export function WeeklyCalendar({
 }: WeeklyCalendarProps) {
   const normalizedWeekStart = startOfWeek(weekStart);
   const days = Array.from({ length: 7 }, (_, index) => addDays(normalizedWeekStart, index));
-  const rows = getSlotRows();
   const weekEnd = addDays(normalizedWeekStart, 6);
+  const rows = getRows();
+  const gridHeight = rows.length * rowHeight;
 
   const goToPreviousWeek = () => onWeekChange(addDays(normalizedWeekStart, -7));
   const goToThisWeek = () => onWeekChange(startOfWeek(new Date()));
@@ -148,63 +165,61 @@ export function WeeklyCalendar({
             </div>
           ))}
 
-          {rows.map((row) => (
-            <Fragment key={`row-${formatTime(row)}`}>
-              <div key={`time-${formatTime(row)}`} className="weekly-calendar-time">
-                {formatTime(row)}
+          <div className="weekly-calendar-time-column" style={{ height: gridHeight }}>
+            {rows.map((row) => (
+              <div key={row.label} className="weekly-calendar-time" style={{ height: rowHeight }}>
+                {row.label}
               </div>
-              {days.map((day) => {
-                const slotDate = new Date(day);
-                slotDate.setHours(row.getHours(), row.getMinutes(), 0, 0);
-                const slotEvents = events.filter((event) => eventIntersectsSlot(event, day, row));
+            ))}
+          </div>
 
-                return (
+          {days.map((day) => {
+            const dayEvents = events.filter((event) => sameDay(parseDate(event.startTime), day));
+            return (
+              <div key={`column-${day.toISOString()}`} className="weekly-calendar-day-column" style={{ height: gridHeight }}>
+                {rows.map((row) => (
                   <button
-                    key={`${day.toISOString()}-${formatTime(row)}`}
+                    key={`${day.toISOString()}-${row.minutes}`}
                     type="button"
-                    className={`weekly-calendar-cell ${slotEvents.length ? 'has-events' : ''}`}
-                    onClick={() => {
-                      if (slotEvents.length > 0) {
-                        onEventClick(slotEvents[0]);
-                      } else {
-                        onEmptySlotClick?.(slotDate);
-                      }
-                    }}
+                    className="weekly-calendar-cell"
+                    style={{ height: rowHeight }}
+                    onClick={() => onEmptySlotClick?.(makeEmptySlotDate(day, row.minutes))}
                   >
-                    {slotEvents.length > 0 ? (
-                      <div className="weekly-calendar-event-stack">
-                        {slotEvents.slice(0, 2).map((event) => (
-                          <div
-                            key={event.id}
-                            className={`weekly-calendar-event weekly-calendar-event-${eventTone(event)}`}
-                            title={event.title}
-                          >
-                            <div className="weekly-calendar-event-title">{event.title}</div>
-                            <div className="weekly-calendar-event-meta">
-                              <IconClock size={12} />
-                              <span>
-                                {formatTime(parseDate(event.startTime))} - {formatTime(parseDate(event.endTime))}
-                              </span>
-                            </div>
-                            {event.status ? (
-                              <div className="weekly-calendar-event-status">{formatStatusLabel(event.status)}</div>
-                            ) : event.subtitle ? (
-                              <div className="weekly-calendar-event-status">{event.subtitle}</div>
-                            ) : null}
-                          </div>
-                        ))}
-                        {slotEvents.length > 2 ? (
-                          <div className="weekly-calendar-more">+{slotEvents.length - 2} mục khác</div>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <span className="weekly-calendar-empty-label">{emptySlotLabel}</span>
-                    )}
+                    <span className="weekly-calendar-empty-label">{emptySlotLabel}</span>
                   </button>
-                );
-              })}
-            </Fragment>
-          ))}
+                ))}
+
+                {dayEvents.map((event) => {
+                  const layout = getEventLayout(event);
+                  return (
+                    <button
+                      key={event.id}
+                      type="button"
+                      className={`weekly-calendar-event weekly-calendar-event-${eventTone(event)}`}
+                      style={{ top: layout.top + 8, height: Math.max(64, layout.height - 16) }}
+                      title={event.title}
+                      onClick={(clickEvent) => {
+                        clickEvent.stopPropagation();
+                        onEventClick(event);
+                      }}
+                    >
+                      <div className="weekly-calendar-event-code">
+                        {event.kind === 'slot' ? (event.isAvailable ? 'AVAILABLE' : 'BOOKED') : formatStatusLabel(event.status || '')}
+                      </div>
+                      <div className="weekly-calendar-event-title">{event.title}</div>
+                      {event.subtitle ? <div className="weekly-calendar-event-subtitle">{event.subtitle}</div> : null}
+                      <div className="weekly-calendar-event-meta">
+                        <IconClock size={13} />
+                        <span>
+                          {formatTime(parseDate(event.startTime))} - {formatTime(parseDate(event.endTime))}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
