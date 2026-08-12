@@ -24,7 +24,7 @@ export function StudentAppointmentsPage() {
   const [lecturers, setLecturers] = useState<LecturerListItemDto[]>([]);
   const [availableSlots, setAvailableSlots] = useState<SlotResponseDto[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
+  const [activeTab, setActiveTab] = useState<'current' | 'history' | 'available'>('current');
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [weekStart, setWeekStart] = useState(() => new Date());
   const [calendarKindFilter, setCalendarKindFilter] = useState<'all' | 'appointments' | 'slots'>('all');
@@ -85,7 +85,7 @@ export function StudentAppointmentsPage() {
     return item.status === 'Cancelled' || item.status === 'Rejected' || isPast;
   });
 
-  const displayItems = activeTab === 'current' ? currentItems : historyItems;
+  const displayItems = activeTab === 'current' ? currentItems : activeTab === 'history' ? historyItems : [];
   const calendarEvents: CalendarEvent<AppointmentResponseDto | SlotResponseDto>[] = useMemo(() => {
     const appointmentEvents: CalendarEvent<AppointmentResponseDto>[] = items.map((item) => ({
       id: `appointment-${item.appointmentId}`,
@@ -363,6 +363,41 @@ export function StudentAppointmentsPage() {
               {historyItems.length}
             </span>
           </button>
+
+          <button
+            type="button"
+            className="btn"
+            style={{
+              fontSize: '0.88rem',
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-sm)',
+              border: 'none',
+              background: activeTab === 'available' ? '#fff' : 'transparent',
+              color: activeTab === 'available' ? 'var(--success)' : 'var(--text-secondary)',
+              fontWeight: activeTab === 'available' ? 700 : 500,
+              boxShadow: activeTab === 'available' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              transition: 'all 0.15s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+            onClick={() => setActiveTab('available')}
+          >
+            <IconCalendar size={16} style={{ color: activeTab === 'available' ? 'var(--success)' : 'var(--text-muted)' }} />
+            <span>Lịch trống</span>
+            <span
+              style={{
+                background: activeTab === 'available' ? 'var(--success)' : '#cbd5e1',
+                color: '#fff',
+                borderRadius: 12,
+                padding: '2px 8px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+              }}
+            >
+              {availableSlots.length}
+            </span>
+          </button>
         </div>
         </div>
       )}
@@ -378,7 +413,7 @@ export function StudentAppointmentsPage() {
         />
       ) : null}
 
-      {viewMode === 'list' ? <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {viewMode === 'list' && activeTab !== 'available' ? <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {displayItems.map((item) => (
           <div key={item.appointmentId} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
@@ -467,6 +502,41 @@ export function StudentAppointmentsPage() {
           </div>
         )}
       </div> : null}
+
+      {viewMode === 'list' && activeTab === 'available' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {availableSlots.map((slot) => (
+            <div key={slot.availabilitySlotId} className="panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <IconCalendar size={17} style={{ color: 'var(--success)' }} />
+                  <span>Slot rảnh với {slot.lecturerName}</span>
+                </h3>
+                <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', color: 'var(--text-secondary)', fontSize: '0.86rem' }}>
+                  <span><strong>Thời gian:</strong> {formatDateTime(slot.startTime)} - {formatDateTime(slot.endTime)}</span>
+                  <span><strong>Khoa:</strong> {slot.department || 'Chưa cập nhật'}</span>
+                  <span><strong>Hình thức:</strong> <span className="badge badge-neutral">{slot.meetingType}</span></span>
+                  <span><strong>Địa điểm/link:</strong> {slot.locationOrLink || 'Chưa cập nhật'}</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-success"
+                onClick={() => navigate(`/app/lecturers/${slot.lecturerId}`)}
+              >
+                Đặt lịch
+              </button>
+            </div>
+          ))}
+
+          {availableSlots.length === 0 ? (
+            <div className="panel" style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
+              Hiện chưa có slot rảnh nào từ giảng viên.
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {/* MODAL 1: VIEW DETAILS ONLY */}
       {activeModal && activeModal.mode === 'view' && (
