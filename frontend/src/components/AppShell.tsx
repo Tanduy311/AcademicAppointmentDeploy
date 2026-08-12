@@ -97,7 +97,7 @@ export function AppShell() {
     {
       to: '/app/profile',
       label: 'Hồ sơ cá nhân',
-      show: role === 'Student',
+      show: role === 'Student' || role === 'Lecturer',
       icon: <IconUser className="nav-icon" />
     },
   ].filter((item) => item.show);

@@ -100,10 +100,16 @@ export function DashboardPage() {
               </Link>
             )}
             {role === 'Lecturer' && (
-              <Link to="/app/slots" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <IconPlus size={16} />
-                <span>Tạo khung giờ rảnh</span>
-              </Link>
+              <>
+                <Link to="/app/profile" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <IconUser size={16} />
+                  <span>Hồ sơ giảng viên</span>
+                </Link>
+                <Link to="/app/slots" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <IconPlus size={16} />
+                  <span>Tạo khung giờ rảnh</span>
+                </Link>
+              </>
             )}
             {role === 'Admin' && (
               <Link to="/app/admin/users" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>

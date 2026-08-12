@@ -16,6 +16,7 @@ import { RegisterStudentPage } from './pages/RegisterStudentPage';
 import { LecturerSlotsPage } from './pages/LecturerSlotsPage';
 import { StudentAppointmentsPage } from './pages/StudentAppointmentsPage';
 import { StudentProfilePage } from './pages/StudentProfilePage';
+import { LecturerProfilePage } from './pages/LecturerProfilePage';
 
 function AppRedirect() {
   const { user, loading } = useAuth();
@@ -23,6 +24,12 @@ function AppRedirect() {
   if (loading) return <div className="center-shell">Loading...</div>;
   if (!user) return <Navigate to="/login" replace />;
   return <Navigate to="/app" replace />;
+}
+
+function ProfilePage() {
+  const { user } = useAuth();
+  if (user?.roleName === 'Lecturer') return <LecturerProfilePage />;
+  return <StudentProfilePage />;
 }
 
 export function App() {
@@ -40,9 +47,12 @@ export function App() {
           <Route path="lecturers/:lecturerId" element={<LecturerDetailPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
 
+          <Route element={<ProtectedRoute roles={['Student', 'Lecturer']} />}>
+            <Route path="profile" element={<ProfilePage />} />
+          </Route>
+
           <Route element={<ProtectedRoute roles={['Student']} />}>
             <Route path="appointments" element={<StudentAppointmentsPage />} />
-            <Route path="profile" element={<StudentProfilePage />} />
           </Route>
 
           <Route element={<ProtectedRoute roles={['Lecturer']} />}>
