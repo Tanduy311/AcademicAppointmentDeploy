@@ -251,12 +251,11 @@ export function StudentAppointmentsPage() {
               <button
                 type="button"
                 className="btn btn-secondary"
-                style={{ fontSize: '0.82rem', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                style={{ fontSize: '0.82rem' }}
                 onClick={() => openViewModal(item)}
                 disabled={detailLoadingId === item.appointmentId}
               >
                 <span>{detailLoadingId === item.appointmentId ? 'Đang tải...' : 'Xem chi tiết'}</span>
-                <IconArrowRight size={14} />
               </button>
             </div>
           </div>

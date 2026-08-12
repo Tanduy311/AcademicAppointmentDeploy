@@ -183,9 +183,8 @@ export function RegisterStudentPage() {
             </div>
           </div>
 
-          <button className="btn btn-primary" type="submit" disabled={busy} style={{ width: '100%', marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <button className="btn btn-primary" type="submit" disabled={busy} style={{ width: '100%', marginTop: 12, justifyContent: 'center' }}>
             <span>{busy ? 'Đang khởi tạo tài khoản...' : 'Tạo tài khoản sinh viên'}</span>
-            <IconArrowRight size={16} />
           </button>
         </form>
 

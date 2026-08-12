@@ -140,9 +140,8 @@ export function LecturersPage() {
                 <span>{item.upcomingSlotCount > 0 ? `${item.upcomingSlotCount} slot rảnh sắp tới` : 'Chưa mở slot'}</span>
               </span>
 
-              <span style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 600 }}>
                 <span>Xem hồ sơ và đặt lịch</span>
-                <IconArrowRight size={14} />
               </span>
             </div>
           </Link>

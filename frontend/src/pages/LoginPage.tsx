@@ -1,7 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { IconUser, IconTeacher, IconShield, IconAlert, IconArrowRight } from '../components/Icons';
+import { IconUser, IconTeacher, IconShield, IconAlert } from '../components/Icons';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -108,18 +108,17 @@ export function LoginPage() {
             </div>
           ) : null}
 
-          <button className="btn btn-primary" type="submit" disabled={busy} style={{ width: '100%', marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <button className="btn btn-primary" type="submit" disabled={busy} style={{ width: '100%', marginTop: 8, justifyContent: 'center' }}>
             <span>{busy ? 'Đang xác thực...' : 'Đăng nhập ngay'}</span>
-            <IconArrowRight size={16} />
           </button>
         </form>
 
         <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
           <Link to="/register/student" style={{ color: 'var(--accent)', fontWeight: 500 }}>
-            + Đăng ký sinh viên
+            Đăng ký sinh viên
           </Link>
           <Link to="/register/lecturer" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
-            + Đăng ký giảng viên
+            Đăng ký giảng viên
           </Link>
         </div>
       </div>
