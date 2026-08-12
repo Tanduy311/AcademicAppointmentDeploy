@@ -194,7 +194,6 @@ export function WeeklyCalendar({
     'approved',
     'pending',
     'slot-open',
-    'cancelled',
   ]);
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(true);
 
