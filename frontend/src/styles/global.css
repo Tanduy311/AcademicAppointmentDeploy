@@ -603,8 +603,7 @@ input:focus, textarea:focus, select:focus, .custom-select:focus {
 
 .weekly-calendar-scroll {
   overflow-x: auto;
-  max-height: 620px;
-  overflow-y: auto;
+  overflow-y: visible;
   background: #f8fafc;
 }
 
