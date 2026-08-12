@@ -1,7 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import type { StudentDetailDto } from '../types/api';
-import { IconUser, IconBuilding, IconFileText, IconCheck, IconAlert, IconUpload } from '../components/Icons';
+import { IconUser, IconBuilding, IconFileText, IconCheck, IconAlert, IconUpload, IconEdit, IconMail, IconPhone, IconCalendar } from '../components/Icons';
 import { useAuth } from '../context/AuthContext';
 
 export function StudentProfilePage() {
@@ -124,12 +124,20 @@ export function StudentProfilePage() {
         <button
           type="button"
           className="btn btn-primary"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           onClick={() => {
             setEditing(!editing);
             setMsg(null);
           }}
         >
-          {editing ? 'Đóng Form' : '✏️ Chỉnh Sửa Hồ Sơ'}
+          {editing ? (
+            <span>Đóng form</span>
+          ) : (
+            <>
+              <IconEdit size={16} />
+              <span>Chỉnh sửa hồ sơ</span>
+            </>
+          )}
         </button>
       </div>
 
@@ -284,8 +292,9 @@ export function StudentProfilePage() {
           </div>
 
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-              Email Sinh Viên
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <IconMail size={15} />
+              <span>Email Sinh Viên</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               {profile.emailAddress}
@@ -293,8 +302,9 @@ export function StudentProfilePage() {
           </div>
 
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-              Số Điện Thoại
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <IconPhone size={15} />
+              <span>Số Điện Thoại</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               {profile.phoneNumber || 'Chưa cập nhật'}
@@ -302,8 +312,9 @@ export function StudentProfilePage() {
           </div>
 
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-              Khóa Học (Academic Year)
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <IconCalendar size={15} />
+              <span>Khóa Học (Academic Year)</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               {profile.academicYear || '2023 - 2027'}

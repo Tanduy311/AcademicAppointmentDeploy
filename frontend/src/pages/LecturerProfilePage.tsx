@@ -1,7 +1,7 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import type { LecturerDetailDto } from '../types/api';
-import { IconTeacher, IconBuilding, IconTarget, IconMapPin, IconChat, IconFileText, IconCheck, IconAlert, IconUpload } from '../components/Icons';
+import { IconTeacher, IconBuilding, IconTarget, IconMapPin, IconChat, IconFileText, IconCheck, IconAlert, IconUpload, IconEdit, IconPhone } from '../components/Icons';
 import { useAuth } from '../context/AuthContext';
 
 export function LecturerProfilePage() {
@@ -128,12 +128,20 @@ export function LecturerProfilePage() {
         <button
           type="button"
           className="btn btn-primary"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           onClick={() => {
             setEditing(!editing);
             setMsg(null);
           }}
         >
-          {editing ? 'Đóng form' : '✏️ Chỉnh sửa hồ sơ'}
+          {editing ? (
+            <span>Đóng form</span>
+          ) : (
+            <>
+              <IconEdit size={16} />
+              <span>Chỉnh sửa hồ sơ</span>
+            </>
+          )}
         </button>
       </div>
 
@@ -310,8 +318,9 @@ export function LecturerProfilePage() {
           </div>
 
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
-              Số điện thoại
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <IconPhone size={15} />
+              <span>Số điện thoại</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               {profile.phoneNumber || 'Chưa cập nhật'}
