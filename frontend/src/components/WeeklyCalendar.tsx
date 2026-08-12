@@ -441,7 +441,7 @@ export function WeeklyCalendar({
           <div className="weekly-grid-wrapper">
             {/* CORNER TIMEZONE HEADER */}
             <div className="grid-corner-cell">
-              <span>Múi giờ (UTC+07:00)</span>
+              <span>UTC +7</span>
             </div>
 
             {/* DAY COLUMNS HEADERS MATCHING SCREENSHOT 2 (Thứ 2 (05/10)...) */}
