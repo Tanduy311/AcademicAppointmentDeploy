@@ -7,10 +7,7 @@ import {
   IconChevronDown,
   IconChevronUp,
   IconSidebarToggle,
-  IconGoogleCalendar,
-  IconPlus,
   IconCheck,
-  IconMapPin,
 } from './Icons';
 import { formatStatusLabel, parseDate } from '../utils/format';
 
@@ -39,14 +36,26 @@ interface WeeklyCalendarProps {
   onNewEvent?: () => void;
 }
 
-const dayLabelsFull = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+const dayLabelsFull = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
 const dayLabelsShort = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const gridStartHour = 7;
-const gridEndHour = 18;
-const rowMinutes = 60;
-const rowHeight = 90;
-const totalGridMinutes = (gridEndHour - gridStartHour) * 60;
-const gridStartMinutes = gridStartHour * 60;
+
+// 1-hour time slots from 07:30 to 17:30 matching Screenshot 2
+const timeSlotRanges = [
+  { label: '07:30 - 08:30', startHour: 7.5, endHour: 8.5 },
+  { label: '08:30 - 09:30', startHour: 8.5, endHour: 9.5 },
+  { label: '09:30 - 10:30', startHour: 9.5, endHour: 10.5 },
+  { label: '10:30 - 11:30', startHour: 10.5, endHour: 11.5 },
+  { label: '11:30 - 12:30', startHour: 11.5, endHour: 12.5 },
+  { label: '12:30 - 13:30', startHour: 12.5, endHour: 13.5 },
+  { label: '13:30 - 14:30', startHour: 13.5, endHour: 14.5 },
+  { label: '14:30 - 15:30', startHour: 14.5, endHour: 15.5 },
+  { label: '15:30 - 16:30', startHour: 15.5, endHour: 16.5 },
+  { label: '16:30 - 17:30', startHour: 16.5, endHour: 17.5 },
+];
+
+const rowHeight = 90; // Height per 1-hour row
+const gridStartMinutes = 7.5 * 60; // 07:30 = 450 minutes
+const totalGridMinutes = (17.5 - 7.5) * 60; // 10 hours = 600 minutes
 
 function startOfWeek(date: Date) {
   const result = new Date(date);
@@ -79,33 +88,22 @@ function formatMonthYear(date: Date) {
   return `${monthNames[date.getMonth()]}, ${date.getFullYear()}`;
 }
 
-function formatTimeAMPM(date: Date) {
-  let hours = date.getHours();
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12;
-  hours = hours ? hours : 12;
-  return `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+function formatDateHeader(date: Date) {
+  const dayStr = String(date.getDate()).padStart(2, '0');
+  const monthStr = String(date.getMonth() + 1).padStart(2, '0');
+  return `(${dayStr}/${monthStr})`;
 }
 
-function formatTimeRange(startStr: string, endStr: string) {
+function formatTimeHHMM(date: Date) {
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+function formatTimeArrowRange(startStr: string, endStr: string) {
   const start = parseDate(startStr);
   const end = parseDate(endStr);
-  return `${formatTimeAMPM(start)} - ${formatTimeAMPM(end)}`;
-}
-
-function getRows() {
-  const rows: { label: string; minutes: number }[] = [];
-  for (let hour = gridStartHour; hour < gridEndHour; hour++) {
-    const minutes = hour * 60;
-    const date = new Date();
-    date.setHours(hour, 0, 0, 0);
-    rows.push({
-      label: formatTimeAMPM(date),
-      minutes,
-    });
-  }
-  return rows;
+  return `${formatTimeHHMM(start)} -> ${formatTimeHHMM(end)}`;
 }
 
 function getEventTone(event: CalendarEvent) {
@@ -120,51 +118,30 @@ function getEventTone(event: CalendarEvent) {
   return 'slate';
 }
 
-function extractRealAttendees(event: CalendarEvent) {
-  const raw = event.raw as Record<string, any> | undefined;
-  if (!raw) return [];
-
-  const attendees: { name: string; bg: string; initial: string }[] = [];
-
-  if (raw.studentName) {
-    const name = String(raw.studentName);
-    attendees.push({
-      name,
-      bg: '#2563eb',
-      initial: name.charAt(0).toUpperCase(),
-    });
-  }
-
-  if (raw.lecturerName) {
-    const name = String(raw.lecturerName);
-    attendees.push({
-      name,
-      bg: '#16a34a',
-      initial: name.charAt(0).toUpperCase(),
-    });
-  }
-
-  return attendees;
-}
-
-function getEventLayout(event: CalendarEvent, rowsCount: number) {
+function getEventLayout(event: CalendarEvent) {
   const start = parseDate(event.startTime);
   const end = parseDate(event.endTime);
   const startMinutes = start.getHours() * 60 + start.getMinutes();
   const endMinutes = end.getHours() * 60 + end.getMinutes();
+
   const clampedStart = Math.max(startMinutes, gridStartMinutes);
-  const clampedEnd = Math.min(endMinutes, gridStartHour * 60 + totalGridMinutes);
-  const visibleMinutes = Math.max(45, clampedEnd - clampedStart);
+  const clampedEnd = Math.min(endMinutes, 17.5 * 60);
+  const durationMinutes = Math.max(50, clampedEnd - clampedStart);
+
+  const topPx = ((clampedStart - gridStartMinutes) / totalGridMinutes) * (timeSlotRanges.length * rowHeight);
+  const heightPx = (durationMinutes / 60) * rowHeight;
 
   return {
-    top: ((clampedStart - gridStartMinutes) / totalGridMinutes) * (rowsCount * rowHeight),
-    height: (visibleMinutes / rowMinutes) * rowHeight,
+    top: topPx,
+    height: heightPx,
   };
 }
 
-function makeEmptySlotDate(day: Date, rowMinutesValue: number) {
+function makeEmptySlotDate(day: Date, startHourVal: number) {
   const result = new Date(day);
-  result.setHours(Math.floor(rowMinutesValue / 60), rowMinutesValue % 60, 0, 0);
+  const h = Math.floor(startHourVal);
+  const m = Math.round((startHourVal - h) * 60);
+  result.setHours(h, m, 0, 0);
   return result;
 }
 
@@ -190,6 +167,20 @@ function getMiniCalendarDays(currentDate: Date) {
   return days;
 }
 
+// Generate code tag e.g. "CSW 307", "MATH 104", "CSW 431", "MTH 171" matching Screenshot 2
+function getCourseCodeTag(event: CalendarEvent) {
+  const raw = event.raw as Record<string, any> | undefined;
+  if (raw?.courseCode) return raw.courseCode;
+
+  const status = (event.status || '').toLowerCase();
+  if (event.kind === 'slot') return event.isAvailable ? 'SLOT RẢNH' : 'ĐÃ KÍN';
+  if (['confirmed', 'approved'].includes(status)) return 'ĐÃ DUYỆT';
+  if (status === 'pending') return 'CHỜ DUYỆT';
+  if (['cancelled', 'canceled', 'rejected'].includes(status)) return 'ĐÃ HỦY';
+
+  return 'HỌC THUẬT';
+}
+
 export function WeeklyCalendar({
   events,
   weekStart,
@@ -197,10 +188,8 @@ export function WeeklyCalendar({
   onEventClick,
   onEmptySlotClick,
   emptySlotLabel = 'Tạo lịch',
-  onNewEvent,
 }: WeeklyCalendarProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
   const [miniMonthDate, setMiniMonthDate] = useState<Date>(new Date(weekStart));
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([
     'approved',
@@ -209,14 +198,11 @@ export function WeeklyCalendar({
     'cancelled',
   ]);
   const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(true);
-  const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   const normalizedWeekStart = startOfWeek(weekStart);
   const days = Array.from({ length: 7 }, (_, index) => addDays(normalizedWeekStart, index));
-  const displayedDays = viewMode === 'day' ? [new Date()] : days;
 
-  const rows = getRows();
-  const gridHeight = rows.length * rowHeight;
+  const gridHeight = timeSlotRanges.length * rowHeight;
 
   const filteredEvents = events.filter((event) => {
     let key = 'slate';
@@ -237,11 +223,6 @@ export function WeeklyCalendar({
     setSelectedStatuses((prev) =>
       prev.includes(statusKey) ? prev.filter((s) => s !== statusKey) : [...prev, statusKey]
     );
-  };
-
-  const handleSyncGoogle = () => {
-    setSyncMessage('Đã đồng bộ thành công với Google Calendar!');
-    setTimeout(() => setSyncMessage(null), 3000);
   };
 
   const prevMiniMonth = () => {
@@ -273,7 +254,6 @@ export function WeeklyCalendar({
               <span className="all-calendar-badge">31</span>
             </div>
             <div>
-              {/* Removed chevron down arrow 'v' as requested */}
               <div className="all-calendar-title">
                 Lịch Học Thuật
               </div>
@@ -421,7 +401,7 @@ export function WeeklyCalendar({
           </div>
         </header>
 
-        {/* CONTROL ROW */}
+        {/* CONTROL ROW - Removed the 3 buttons on the right side as requested */}
         <div className="calendar-controls-bar">
           <div className="controls-bar-left">
             <div className="month-picker-dropdown" onClick={goToToday} title="Click để về hôm nay">
@@ -461,89 +441,42 @@ export function WeeklyCalendar({
               <span>{filteredEvents.length} lịch hẹn</span>
             </div>
           </div>
-
-          <div className="controls-bar-right">
-            {/* VIEW MODE SWITCHER TABS */}
-            <div className="view-switcher-pills">
-              <button
-                type="button"
-                className={`view-pill ${viewMode === 'day' ? 'view-pill-active' : ''}`}
-                onClick={() => setViewMode('day')}
-              >
-                Ngày
-              </button>
-              <button
-                type="button"
-                className={`view-pill ${viewMode === 'week' ? 'view-pill-active' : ''}`}
-                onClick={() => setViewMode('week')}
-              >
-                Tuần
-              </button>
-              <button
-                type="button"
-                className={`view-pill ${viewMode === 'month' ? 'view-pill-active' : ''}`}
-                onClick={() => setViewMode('month')}
-              >
-                Tháng
-              </button>
-            </div>
-
-            {/* ACTION BUTTONS */}
-            <button
-              type="button"
-              className="btn-sync-google"
-              onClick={handleSyncGoogle}
-            >
-              <IconGoogleCalendar size={18} />
-              <span>Sync to Google Calendar</span>
-            </button>
-
-            <button
-              type="button"
-              className="btn-new-event"
-              onClick={() => onNewEvent?.() || onEmptySlotClick?.(new Date())}
-            >
-              <IconPlus size={16} />
-              <span>Tạo cuộc hẹn mới</span>
-            </button>
-          </div>
         </div>
 
-        {syncMessage && <div className="sync-toast-banner">{syncMessage}</div>}
-
-        {/* WEEKLY TIME GRID */}
+        {/* WEEKLY TIME GRID MATCHING SCREENSHOT 2 */}
         <div className="weekly-grid-container">
           <div className="weekly-grid-wrapper">
             {/* CORNER TIMEZONE HEADER */}
             <div className="grid-corner-cell">
-              <span>UTC +7</span>
+              <span>Múi giờ<br/>(UTC+07:00)</span>
             </div>
 
-            {/* DAY COLUMNS HEADERS */}
-            {displayedDays.map((day, idx) => {
+            {/* DAY COLUMNS HEADERS MATCHING SCREENSHOT 2 (Thứ 2 (05/10)...) */}
+            {days.map((day, idx) => {
               const isToday = sameDay(day, new Date());
               return (
                 <div
                   key={day.toISOString()}
                   className={`grid-day-header ${isToday ? 'grid-day-header-today' : ''}`}
                 >
-                  <div className="header-date-number">{day.getDate()}</div>
-                  <div className="header-day-name">{dayLabelsFull[idx]}</div>
+                  <div className="header-day-title">
+                    {dayLabelsFull[idx]} <span className="header-day-date">{formatDateHeader(day)}</span>
+                  </div>
                 </div>
               );
             })}
 
-            {/* TIME COLUMN */}
+            {/* TIME COLUMN MATCHING SCREENSHOT 2 (07:30 - 08:30...) */}
             <div className="grid-time-column" style={{ height: gridHeight }}>
-              {rows.map((row) => (
-                <div key={row.label} className="time-row-label" style={{ height: rowHeight }}>
-                  {row.label}
+              {timeSlotRanges.map((slot) => (
+                <div key={slot.label} className="time-slot-cell" style={{ height: rowHeight }}>
+                  <span>{slot.label}</span>
                 </div>
               ))}
             </div>
 
             {/* DAY EVENT COLUMNS */}
-            {displayedDays.map((day) => {
+            {days.map((day) => {
               const dayEvents = filteredEvents.filter((event) =>
                 sameDay(parseDate(event.startTime), day)
               );
@@ -554,95 +487,50 @@ export function WeeklyCalendar({
                   className="grid-day-column"
                   style={{ height: gridHeight }}
                 >
-                  {rows.map((row) => (
+                  {timeSlotRanges.map((slot) => (
                     <button
-                      key={`${day.toISOString()}-${row.minutes}`}
+                      key={`${day.toISOString()}-${slot.label}`}
                       type="button"
                       className="grid-empty-cell"
                       style={{ height: rowHeight }}
-                      onClick={() => onEmptySlotClick?.(makeEmptySlotDate(day, row.minutes))}
+                      onClick={() => onEmptySlotClick?.(makeEmptySlotDate(day, slot.startHour))}
                     >
                       <span className="cell-hover-label">+ {emptySlotLabel}</span>
                     </button>
                   ))}
 
-                  {/* EVENT CARDS */}
+                  {/* EVENT CARDS - STYLED EXACTLY AS SCREENSHOT 2 */}
                   {dayEvents.map((event) => {
-                    const layout = getEventLayout(event, rows.length);
+                    const layout = getEventLayout(event);
                     const tone = getEventTone(event);
-                    const attendees = extractRealAttendees(event);
                     const raw = event.raw as Record<string, any> | undefined;
-                    const meetingType = raw?.meetingType;
-                    const locationOrLink = raw?.locationOrLink;
-                    const statusText =
-                      event.kind === 'slot'
-                        ? event.isAvailable
-                          ? 'Slot rảnh'
-                          : 'Đã kín'
-                        : formatStatusLabel(event.status || '');
+
+                    const tagCode = getCourseCodeTag(event);
+                    const groupName = raw?.studentGroup || raw?.group || 'Nhóm: 01';
+                    const location = raw?.locationOrLink || raw?.room || 'Phòng: Đang cập nhật';
+                    const lecturerName = raw?.lecturerName ? `GV: ${raw.lecturerName}` : raw?.studentName ? `SV: ${raw.studentName}` : 'GV: Đang cập nhật';
 
                     return (
                       <div
                         key={event.id}
-                        className={`pastel-event-card tone-${tone}`}
+                        className={`academic-event-card academic-tone-${tone}`}
                         style={{
-                          top: layout.top + 5,
-                          height: Math.max(62, layout.height - 10),
+                          top: layout.top + 3,
+                          height: Math.max(58, layout.height - 6),
                         }}
                         onClick={() => onEventClick(event)}
                       >
-                        <div className="card-left-accent" />
+                        <div className="card-tag-code">{tagCode}</div>
+                        <h4 className="card-academic-title">{event.title}</h4>
 
-                        <div className="card-content-body">
-                          <div className="card-top-info">
-                            <div className="card-status-badge">
-                              {statusText}
-                            </div>
-                            <h4 className="card-event-title">{event.title}</h4>
-                            {event.subtitle && (
-                              <div className="card-event-subtitle">{event.subtitle}</div>
-                            )}
-                          </div>
+                        <div className="card-academic-details">
+                          <div className="detail-line">{groupName}</div>
+                          <div className="detail-line">{location}</div>
+                          <div className="detail-line">{lecturerName}</div>
+                        </div>
 
-                          <div className="card-bottom-info">
-                            <div className="card-time-row">
-                              <IconClock size={12} />
-                              <span>{formatTimeRange(event.startTime, event.endTime)}</span>
-                            </div>
-
-                            {/* HOVER DETAILS */}
-                            <div className="card-hover-extra">
-                              {meetingType && (
-                                <span className="extra-tag">Hình thức: {meetingType}</span>
-                              )}
-                              {locationOrLink && (
-                                <span className="extra-tag">
-                                  <IconMapPin size={11} /> {locationOrLink}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* REAL ATTENDEES AVATARS */}
-                            {attendees.length > 0 && (
-                              <div className="card-avatar-footer">
-                                <div className="avatar-overlap-stack">
-                                  {attendees.map((att) => (
-                                    <div
-                                      key={att.name}
-                                      className="avatar-bubble"
-                                      style={{ backgroundColor: att.bg }}
-                                      title={att.name}
-                                    >
-                                      {att.initial}
-                                    </div>
-                                  ))}
-                                </div>
-                                <span className="avatar-count-badge" title={attendees.map((a) => a.name).join(', ')}>
-                                  {attendees.map((a) => a.name).join(', ')}
-                                </span>
-                              </div>
-                            )}
-                          </div>
+                        <div className="card-time-arrow">
+                          {formatTimeArrowRange(event.startTime, event.endTime)}
                         </div>
                       </div>
                     );
