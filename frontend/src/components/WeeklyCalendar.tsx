@@ -168,13 +168,12 @@ function makeEmptySlotDate(day: Date, rowMinutesValue: number) {
   return result;
 }
 
-// Generate 42 days for mini calendar view
 function getMiniCalendarDays(currentDate: Date) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const firstDayOfMonth = new Date(year, month, 1);
-  let startingDay = firstDayOfMonth.getDay(); // 0 = Sunday
-  startingDay = startingDay === 0 ? 6 : startingDay - 1; // convert Mon = 0
+  let startingDay = firstDayOfMonth.getDay();
+  startingDay = startingDay === 0 ? 6 : startingDay - 1;
 
   const days: { date: Date; isCurrentMonth: boolean }[] = [];
   const startDate = new Date(year, month, 1 - startingDay);
@@ -219,7 +218,6 @@ export function WeeklyCalendar({
   const rows = getRows();
   const gridHeight = rows.length * rowHeight;
 
-  // Filter events strictly by appointment status
   const filteredEvents = events.filter((event) => {
     let key = 'slate';
     if (event.kind === 'slot') {
@@ -266,7 +264,7 @@ export function WeeklyCalendar({
 
   return (
     <div className={`weekly-calendar-redesign ${isSidebarOpen ? 'sidebar-expanded' : 'sidebar-collapsed'}`}>
-      {/* LEFT SIDEBAR PANEL (Collapsible) */}
+      {/* LEFT SIDEBAR PANEL */}
       <aside className="calendar-left-panel">
         <div className="calendar-sidebar-header">
           <div className="calendar-all-dropdown">
@@ -275,9 +273,9 @@ export function WeeklyCalendar({
               <span className="all-calendar-badge">31</span>
             </div>
             <div>
+              {/* Removed chevron down arrow 'v' as requested */}
               <div className="all-calendar-title">
                 Lịch Học Thuật
-                <IconChevronDown size={14} className="dropdown-arrow" />
               </div>
               <div className="all-calendar-subtitle">Cá nhân & Giảng viên</div>
             </div>
@@ -639,7 +637,7 @@ export function WeeklyCalendar({
                                     </div>
                                   ))}
                                 </div>
-                                <span className="avatar-count-badge">
+                                <span className="avatar-count-badge" title={attendees.map((a) => a.name).join(', ')}>
                                   {attendees.map((a) => a.name).join(', ')}
                                 </span>
                               </div>

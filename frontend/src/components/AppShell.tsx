@@ -193,15 +193,7 @@ export function AppShell() {
 
       <main className="main">
         <header className="topbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button
-              type="button"
-              className="topbar-sidebar-toggle-btn"
-              title={isSidebarCollapsed ? "Mở rộng menu chính" : "Thu gọn menu chính"}
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            >
-              <IconSidebarToggle size={18} />
-            </button>
+          <div>
             <div className="page-title">Hệ thống tư vấn và đặt lịch học thuật</div>
           </div>
           <div className="pill-role">{role || 'Guest'}</div>
