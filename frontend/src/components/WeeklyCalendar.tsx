@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   IconCalendar,
-  IconClock,
   IconChevronLeft,
   IconChevronRight,
   IconChevronDown,
@@ -9,7 +8,7 @@ import {
   IconSidebarToggle,
   IconCheck,
 } from './Icons';
-import { formatStatusLabel, parseDate } from '../utils/format';
+import { parseDate } from '../utils/format';
 
 export type CalendarEventKind = 'appointment' | 'slot';
 
@@ -190,6 +189,7 @@ export function WeeklyCalendar({
 }: WeeklyCalendarProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [miniMonthDate, setMiniMonthDate] = useState<Date>(new Date(weekStart));
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date(weekStart));
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([
     'approved',
     'pending',
@@ -199,6 +199,14 @@ export function WeeklyCalendar({
 
   const normalizedWeekStart = startOfWeek(weekStart);
   const days = Array.from({ length: 7 }, (_, index) => addDays(normalizedWeekStart, index));
+
+  useEffect(() => {
+    // Keep selectedDate in sync if weekStart changes from outside
+    const selectedWeek = startOfWeek(selectedDate);
+    if (!sameDay(selectedWeek, normalizedWeekStart)) {
+      setSelectedDate(normalizedWeekStart);
+    }
+  }, [normalizedWeekStart]);
 
   const gridHeight = timeSlotRanges.length * rowHeight;
 
@@ -234,12 +242,32 @@ export function WeeklyCalendar({
   const goToToday = () => {
     const today = new Date();
     setMiniMonthDate(today);
+    setSelectedDate(today);
     onWeekChange(startOfWeek(today));
   };
 
-  const goToPreviousWeek = () => onWeekChange(addDays(normalizedWeekStart, -7));
-  const goToThisWeek = () => onWeekChange(startOfWeek(new Date()));
-  const goToNextWeek = () => onWeekChange(addDays(normalizedWeekStart, 7));
+  const goToPreviousWeek = () => {
+    const newWeek = addDays(normalizedWeekStart, -7);
+    setSelectedDate(newWeek);
+    onWeekChange(newWeek);
+  };
+
+  const goToThisWeek = () => {
+    const today = new Date();
+    setSelectedDate(today);
+    onWeekChange(startOfWeek(today));
+  };
+
+  const goToNextWeek = () => {
+    const newWeek = addDays(normalizedWeekStart, 7);
+    setSelectedDate(newWeek);
+    onWeekChange(newWeek);
+  };
+
+  const handleMiniDayClick = (date: Date) => {
+    setSelectedDate(date);
+    onWeekChange(startOfWeek(date));
+  };
 
   return (
     <div className={`weekly-calendar-redesign ${isSidebarOpen ? 'sidebar-expanded' : 'sidebar-collapsed'}`}>
@@ -248,8 +276,7 @@ export function WeeklyCalendar({
         <div className="calendar-sidebar-header">
           <div className="calendar-all-dropdown">
             <div className="all-calendar-icon">
-              <IconCalendar size={16} />
-              <span className="all-calendar-badge">31</span>
+              <IconCalendar size={22} />
             </div>
             <div>
               <div className="all-calendar-title">
@@ -293,7 +320,7 @@ export function WeeklyCalendar({
             ))}
 
             {miniDays.map(({ date, isCurrentMonth }) => {
-              const isSelected = sameDay(date, weekStart);
+              const isSelected = sameDay(date, selectedDate);
               const isToday = sameDay(date, new Date());
 
               return (
@@ -302,10 +329,8 @@ export function WeeklyCalendar({
                   type="button"
                   className={`mini-day-cell ${!isCurrentMonth ? 'mini-day-faded' : ''} ${
                     isSelected ? 'mini-day-selected' : ''
-                  } ${isToday ? 'mini-day-today' : ''}`}
-                  onClick={() => {
-                    onWeekChange(startOfWeek(date));
-                  }}
+                  } ${isToday && !isSelected ? 'mini-day-today' : ''}`}
+                  onClick={() => handleMiniDayClick(date)}
                 >
                   {date.getDate()}
                 </button>
