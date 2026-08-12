@@ -74,7 +74,7 @@ export function LecturerDetailPage() {
   if (loading) {
     return (
       <div className="panel" style={{ textAlign: 'center', padding: 48 }}>
-        <div style={{ color: 'var(--text-secondary)' }}>Đang tải hồ sơ Giảng viên...</div>
+        <div style={{ color: 'var(--text-secondary)' }}>Đang tải hồ sơ giảng viên...</div>
       </div>
     );
   }
@@ -99,7 +99,7 @@ export function LecturerDetailPage() {
 
           <div style={{ fontSize: '0.9rem', color: 'var(--accent)', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
             <IconBuilding size={16} />
-            <span>{data.department || 'Khoa Công Nghệ Thông Tin'}</span>
+            <span>{data.department || 'Khoa Công nghệ thông tin'}</span>
           </div>
 
           {data.specialization ? (
@@ -112,7 +112,7 @@ export function LecturerDetailPage() {
           {data.officeLocation ? (
             <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
               <IconMapPin size={16} />
-              <span><strong>Văn phòng làm việc:</strong> {data.officeLocation}</span>
+              <span><strong>Văn phòng:</strong> {data.officeLocation}</span>
             </div>
           ) : null}
 
@@ -129,7 +129,7 @@ export function LecturerDetailPage() {
       <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <IconClock size={20} style={{ color: 'var(--accent)' }} />
-          <span>Chọn Khung Giờ Rảnh Tư Vấn ({availableSlots.length})</span>
+          <span>Chọn khung giờ rảnh tư vấn ({availableSlots.length})</span>
         </h2>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -166,7 +166,7 @@ export function LecturerDetailPage() {
                       <span>Đã chọn slot này</span>
                     </span>
                   ) : slot.isAvailable ? (
-                    <span className="badge badge-neutral">Bấm chọn</span>
+                    <span className="badge badge-neutral">Chọn slot</span>
                   ) : (
                     <span className="badge badge-danger">Đã kín lịch</span>
                   )}
@@ -188,7 +188,7 @@ export function LecturerDetailPage() {
         <form className="panel" onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
             <IconFileText size={20} style={{ color: 'var(--accent)' }} />
-            <span>Đăng Ký Thông Tin Lịch Hẹn</span>
+            <span>Đăng ký thông tin lịch hẹn</span>
           </h2>
 
           {successMsg ? (
@@ -205,7 +205,7 @@ export function LecturerDetailPage() {
           ) : null}
 
           <label className="field">
-            <span>Chủ đề cần tư vấn (Topic)</span>
+            <span>Chủ đề cần tư vấn *</span>
             <input
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
@@ -215,7 +215,7 @@ export function LecturerDetailPage() {
           </label>
 
           <label className="field">
-            <span>Nội dung chi tiết / Câu hỏi gửi Thầy/Cô (Description)</span>
+            <span>Nội dung chi tiết tư vấn</span>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -226,7 +226,7 @@ export function LecturerDetailPage() {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <button className="btn btn-primary" type="submit" disabled={busy || !selectedSlotId}>
-              {busy ? 'Đang gửi yêu cầu...' : 'Bấm Xác Nhận Đặt Lịch Hẹn'}
+              {busy ? 'Đang gửi yêu cầu...' : 'Xác nhận đặt lịch hẹn'}
             </button>
           </div>
         </form>

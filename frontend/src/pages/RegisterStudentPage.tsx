@@ -58,9 +58,9 @@ export function RegisterStudentPage() {
           <div className="brand-logo" style={{ margin: '0 auto 12px auto', width: 48, height: 48 }}>
             <IconTeacher size={26} />
           </div>
-          <h1 style={{ fontSize: '1.4rem' }}>Đăng Ký Tài Khoản Sinh Viên</h1>
+          <h1 style={{ fontSize: '1.4rem' }}>Đăng ký tài khoản sinh viên</h1>
           <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: 6 }}>
-            Cổng Thông Tin Tư Vấn & Đặt Lịch Hẹn Học Thuật Academic Appointment
+            Cổng thông tin tư vấn và đặt lịch học thuật Academic Appointment
           </p>
         </div>
 
@@ -74,27 +74,27 @@ export function RegisterStudentPage() {
 
           {/* Section 1: Account Login Credentials */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ fontSize: '0.8rem', fontFamily: 'JetBrains Mono', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 6 }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 6 }}>
               Thông tin đăng nhập
             </div>
             <div className="grid-2">
               <label className="field">
-                <span>Tên tài khoản (Account Name) *</span>
+                <span>Tên tài khoản *</span>
                 <input
                   value={form.accountName}
                   onChange={(e) => setForm((prev) => ({ ...prev, accountName: e.target.value }))}
-                  placeholder="Ví dụ: student_02"
+                  placeholder="Nhập tên tài khoản..."
                   required
                 />
               </label>
 
               <label className="field">
-                <span>Mật khẩu (Password) *</span>
+                <span>Mật khẩu *</span>
                 <input
                   type="password"
                   value={form.password}
                   onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                  placeholder="Tạo mật khẩu an toàn..."
+                  placeholder="Nhập mật khẩu..."
                   required
                 />
               </label>
@@ -103,8 +103,8 @@ export function RegisterStudentPage() {
 
           {/* Section 2: Personal Information */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ fontSize: '0.8rem', fontFamily: 'JetBrains Mono', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 6 }}>
-              Thông tin cá nhân & liên hệ
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 6 }}>
+              Thông tin cá nhân và liên hệ
             </div>
             <div className="grid-2">
               <label className="field">
@@ -118,7 +118,7 @@ export function RegisterStudentPage() {
               </label>
 
               <label className="field">
-                <span>Địa chỉ Email</span>
+                <span>Địa chỉ email</span>
                 <input
                   type="email"
                   value={form.emailAddress}
@@ -132,7 +132,7 @@ export function RegisterStudentPage() {
                 <input
                   value={form.phoneNumber}
                   onChange={(e) => setForm((prev) => ({ ...prev, phoneNumber: e.target.value }))}
-                  placeholder="Ví dụ: 0912345678"
+                  placeholder="Nhập SĐT..."
                 />
               </label>
             </div>
@@ -140,12 +140,12 @@ export function RegisterStudentPage() {
 
           {/* Section 3: Academic Details */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ fontSize: '0.8rem', fontFamily: 'JetBrains Mono', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 6 }}>
-              Thông tin sinh viên & học tập
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 6 }}>
+              Thông tin sinh viên và học tập
             </div>
             <div className="grid-2">
               <label className="field">
-                <span>Mã số Sinh Viên (Student Code) *</span>
+                <span>Mã số sinh viên *</span>
                 <input
                   value={form.studentCode}
                   onChange={(e) => setForm((prev) => ({ ...prev, studentCode: e.target.value }))}
@@ -155,16 +155,16 @@ export function RegisterStudentPage() {
               </label>
 
               <label className="field">
-                <span>Chuyên ngành (Major)</span>
+                <span>Chuyên ngành</span>
                 <input
                   value={form.major}
                   onChange={(e) => setForm((prev) => ({ ...prev, major: e.target.value }))}
-                  placeholder="Ví dụ: Công Nghệ Thông Tin"
+                  placeholder="Ví dụ: Công nghệ thông tin"
                 />
               </label>
 
               <label className="field">
-                <span>Lớp học phần (Class Name)</span>
+                <span>Lớp học phần</span>
                 <input
                   value={form.className}
                   onChange={(e) => setForm((prev) => ({ ...prev, className: e.target.value }))}
@@ -173,7 +173,7 @@ export function RegisterStudentPage() {
               </label>
 
               <label className="field">
-                <span>Khóa học (Academic Year)</span>
+                <span>Khóa học</span>
                 <input
                   value={form.academicYear}
                   onChange={(e) => setForm((prev) => ({ ...prev, academicYear: e.target.value }))}
@@ -184,14 +184,14 @@ export function RegisterStudentPage() {
           </div>
 
           <button className="btn btn-primary" type="submit" disabled={busy} style={{ width: '100%', marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <span>{busy ? 'Đang khởi tạo tài khoản...' : 'Tạo Tài Khoản Sinh Viên'}</span>
+            <span>{busy ? 'Đang khởi tạo tài khoản...' : 'Tạo tài khoản sinh viên'}</span>
             <IconArrowRight size={16} />
           </button>
         </form>
 
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', textAlign: 'center', fontSize: '0.88rem' }}>
           <Link to="/login" style={{ color: 'var(--accent)', fontWeight: 500 }}>
-            ← Quay lại trang Đăng Nhập
+            ← Quay lại trang đăng nhập
           </Link>
         </div>
       </div>

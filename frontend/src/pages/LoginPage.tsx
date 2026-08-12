@@ -39,14 +39,14 @@ export function LoginPage() {
           </div>
           <h1 style={{ fontSize: '1.4rem' }}>Academic Appointment</h1>
           <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: 6 }}>
-            Cổng Thông Tin Tư Vấn & Đặt Lịch Hẹn Học Thuật
+            Cổng thông tin tư vấn và đặt lịch học thuật
           </p>
         </div>
 
         {/* Quick Demo Accounts Selection */}
         <div style={{ marginBottom: 24, padding: 12, background: '#f8fafc', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-          <div style={{ fontSize: '0.75rem', fontFamily: 'JetBrains Mono', color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>
-            Tài khoản dùng thử nhanh:
+          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>
+            Tài khoản thử nghiệm nhanh:
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button
@@ -81,7 +81,7 @@ export function LoginPage() {
 
         <form onSubmit={onSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <label className="field">
-            <span>Tên tài khoản (Account Name)</span>
+            <span>Tên tài khoản *</span>
             <input
               value={accountName}
               onChange={(e) => setAccountName(e.target.value)}
@@ -91,7 +91,7 @@ export function LoginPage() {
           </label>
 
           <label className="field">
-            <span>Mật khẩu (Password)</span>
+            <span>Mật khẩu *</span>
             <input
               type="password"
               value={password}
@@ -109,17 +109,17 @@ export function LoginPage() {
           ) : null}
 
           <button className="btn btn-primary" type="submit" disabled={busy} style={{ width: '100%', marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <span>{busy ? 'Đang xác thực...' : 'Đăng Nhập ngay'}</span>
+            <span>{busy ? 'Đang xác thực...' : 'Đăng nhập ngay'}</span>
             <IconArrowRight size={16} />
           </button>
         </form>
 
         <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
           <Link to="/register/student" style={{ color: 'var(--accent)', fontWeight: 500 }}>
-            + Đăng ký Sinh viên
+            + Đăng ký sinh viên
           </Link>
           <Link to="/register/lecturer" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>
-            + Đăng ký Giảng viên
+            + Đăng ký giảng viên
           </Link>
         </div>
       </div>

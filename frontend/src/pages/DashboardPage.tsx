@@ -86,7 +86,7 @@ export function DashboardPage() {
               disabled={uploading}
             >
               <IconUpload size={16} />
-              <span>{uploading ? 'Đang tải...' : 'Đổi Avatar'}</span>
+              <span>{uploading ? 'Đang tải...' : 'Đổi avatar'}</span>
             </button>
             {uploadError && (
               <div style={{ width: '100%', color: 'var(--danger)', fontSize: '0.85rem' }}>
@@ -96,19 +96,19 @@ export function DashboardPage() {
             {role === 'Student' && (
               <Link to="/app/lecturers" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <IconSearch size={16} />
-                <span>Tìm Giảng Viên Ngay</span>
+                <span>Tìm giảng viên</span>
               </Link>
             )}
             {role === 'Lecturer' && (
               <Link to="/app/slots" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <IconPlus size={16} />
-                <span>Tạo Slot Rảnh Mới</span>
+                <span>Tạo khung giờ rảnh</span>
               </Link>
             )}
             {role === 'Admin' && (
               <Link to="/app/admin/users" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <IconShield size={16} />
-                <span>Quản Lý Hệ Thống</span>
+                <span>Quản lý hệ thống</span>
               </Link>
             )}
           </div>
@@ -119,7 +119,7 @@ export function DashboardPage() {
       <div className="bento-grid">
         {/* User Card Info */}
         <div className="panel bento-col-4">
-          <div style={{ fontSize: '0.75rem', fontFamily: 'JetBrains Mono', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
             <IconUser size={14} />
             <span>Thông tin tài khoản</span>
           </div>
@@ -134,15 +134,15 @@ export function DashboardPage() {
               <span>{user?.phoneNumber || 'Chưa cập nhật SĐT'}</span>
             </div>
             <div style={{ marginTop: 6 }}>
-              <span className="badge badge-success">Tài Khoản Hoạt Động</span>
+              <span className="badge badge-success">Tài khoản hoạt động</span>
             </div>
           </div>
         </div>
 
         {/* Quick Action Navigation Grid */}
         <div className="panel bento-col-8">
-          <div style={{ fontSize: '0.75rem', fontFamily: 'JetBrains Mono', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 16 }}>
-            Thao tác nhanh hệ thống
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: 16 }}>
+            Thao tác nhanh
           </div>
 
           <div className="grid-2">
@@ -152,7 +152,7 @@ export function DashboardPage() {
                   <div style={{ marginBottom: 10, color: 'var(--accent)' }}>
                     <IconTeacher size={26} />
                   </div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Danh Sách Giảng Viên</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Danh sách giảng viên</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>
                     Xem hồ sơ, phòng làm việc và đặt lịch tư vấn.
                   </div>
@@ -161,7 +161,7 @@ export function DashboardPage() {
                   <div style={{ marginBottom: 10, color: 'var(--accent)' }}>
                     <IconCalendar size={26} />
                   </div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Lịch Hẹn Của Tôi</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Lịch hẹn của tôi</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>
                     Theo dõi tiến độ duyệt lịch và trạng thái phản hồi.
                   </div>
@@ -175,7 +175,7 @@ export function DashboardPage() {
                   <div style={{ marginBottom: 10, color: 'var(--accent)' }}>
                     <IconClock size={26} />
                   </div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Quản Lý Khung Giờ Rảnh</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Quản lý khung giờ rảnh</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>
                     Tạo slot tư vấn Online / Offline cho sinh viên.
                   </div>
@@ -184,7 +184,7 @@ export function DashboardPage() {
                   <div style={{ marginBottom: 10, color: 'var(--accent)' }}>
                     <IconFileText size={26} />
                   </div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Duyệt Lịch Sinh Viên</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Duyệt lịch sinh viên</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>
                     Phê duyệt hoặc từ chối lịch hẹn sinh viên gửi lên.
                   </div>
@@ -198,7 +198,7 @@ export function DashboardPage() {
                   <div style={{ marginBottom: 10, color: 'var(--accent)' }}>
                     <IconShield size={26} />
                   </div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Quản Lý Người Dùng</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Quản lý người dùng</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>
                     Xem danh sách, phân quyền và khóa/mở tài khoản.
                   </div>
@@ -207,7 +207,7 @@ export function DashboardPage() {
                   <div style={{ marginBottom: 10, color: 'var(--accent)' }}>
                     <IconBell size={26} />
                   </div>
-                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Trung Tâm Thông Báo</div>
+                  <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Trung tâm thông báo</div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>
                     Xem tất cả thông báo cập nhật hệ thống real-time.
                   </div>

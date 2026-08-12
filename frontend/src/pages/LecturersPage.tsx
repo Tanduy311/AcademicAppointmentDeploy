@@ -43,7 +43,7 @@ export function LecturersPage() {
   if (loading) {
     return (
       <div className="panel" style={{ textAlign: 'center', padding: 48 }}>
-        <div style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>Đang tải danh sách Giảng Viên...</div>
+        <div style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>Đang tải danh sách giảng viên...</div>
       </div>
     );
   }
@@ -58,7 +58,7 @@ export function LecturersPage() {
       <div className="panel">
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
           <IconTeacher size={24} style={{ color: 'var(--accent)' }} />
-          <span>Danh Sách Giảng Viên Tư Vấn</span>
+          <span>Danh sách giảng viên tư vấn</span>
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 20 }}>
           Tìm kiếm giảng viên theo tên, khoa hoặc chuyên ngành để đăng ký lịch tư vấn học thuật.
@@ -68,10 +68,10 @@ export function LecturersPage() {
           <div className="field" style={{ flex: 1, minWidth: 260 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <IconSearch size={15} />
-              <span>Tìm kiếm Giảng viên</span>
+              <span>Tìm kiếm giảng viên</span>
             </span>
             <input
-              placeholder="Nhập tên, mã GV (GV001), hoặc chuyên ngành..."
+              placeholder="Nhập tên, mã giảng viên hoặc chuyên ngành..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -80,12 +80,12 @@ export function LecturersPage() {
           <div className="field" style={{ width: 240 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <IconBuilding size={15} />
-              <span>Lọc theo Khoa / Viện</span>
+              <span>Lọc theo khoa</span>
             </span>
             <select value={selectedDept} onChange={(e) => setSelectedDept(e.target.value)}>
               {departments.map((dept) => (
                 <option key={dept} value={dept}>
-                  {dept === 'ALL' ? 'Tất cả các Khoa' : dept}
+                  {dept === 'ALL' ? 'Tất cả các khoa' : dept}
                 </option>
               ))}
             </select>
@@ -110,7 +110,7 @@ export function LecturersPage() {
                   </div>
                   <div>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{item.fullName}</h3>
-                    <div style={{ fontSize: '0.75rem', fontFamily: 'JetBrains Mono', color: 'var(--text-muted)' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                       Mã GV: {item.lecturerCode}
                     </div>
                   </div>
@@ -141,7 +141,7 @@ export function LecturersPage() {
               </span>
 
               <span style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                <span>Xem Hồ Sơ & Đặt Lịch</span>
+                <span>Xem hồ sơ và đặt lịch</span>
                 <IconArrowRight size={14} />
               </span>
             </div>

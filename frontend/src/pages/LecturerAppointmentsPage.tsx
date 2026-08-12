@@ -94,7 +94,7 @@ export function LecturerAppointmentsPage() {
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
             <IconFileText size={24} style={{ color: 'var(--accent)' }} />
-            <span>Hàng Đợi Duyệt Lịch Hẹn</span>
+            <span>Hàng đợi duyệt lịch hẹn</span>
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
             Quản lý các yêu cầu tư vấn học thuật do sinh viên gửi đến cho bạn.
@@ -123,7 +123,7 @@ export function LecturerAppointmentsPage() {
             onClick={() => setActiveTab('current')}
           >
             <IconCalendar size={16} style={{ color: activeTab === 'current' ? 'var(--accent)' : 'var(--text-muted)' }} />
-            <span>Yêu Cầu Cần Duyệt & Hiện Tại</span>
+            <span>Yêu cầu cần duyệt và hiện tại</span>
             <span
               style={{
                 background: activeTab === 'current' ? 'var(--accent)' : '#cbd5e1',
@@ -158,7 +158,7 @@ export function LecturerAppointmentsPage() {
             onClick={() => setActiveTab('history')}
           >
             <IconHistory size={16} style={{ color: activeTab === 'history' ? 'var(--text-primary)' : 'var(--text-muted)' }} />
-            <span>Lịch Sử & Đã Hủy</span>
+            <span>Lịch sử và đã hủy</span>
             <span
               style={{
                 background: activeTab === 'history' ? '#64748b' : '#cbd5e1',

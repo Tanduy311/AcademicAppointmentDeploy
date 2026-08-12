@@ -54,37 +54,37 @@ export function AppShell() {
     },
     {
       to: '/app/lecturers',
-      label: 'Giảng Viên',
+      label: 'Giảng viên',
       show: true,
       icon: <IconTeacher className="nav-icon" />
     },
     {
       to: '/app/appointments',
-      label: 'Lịch Hẹn Của Tôi',
+      label: 'Lịch hẹn của tôi',
       show: role === 'Student',
       icon: <IconCalendar className="nav-icon" />
     },
     {
       to: '/app/slots',
-      label: 'Khung Giờ Rảnh',
+      label: 'Khung giờ rảnh',
       show: role === 'Lecturer',
       icon: <IconClock className="nav-icon" />
     },
     {
       to: '/app/lecturer-appointments',
-      label: 'Hàng Đợi Lịch Hẹn',
+      label: 'Hàng đợi lịch hẹn',
       show: role === 'Lecturer',
       icon: <IconFileText className="nav-icon" />
     },
     {
       to: '/app/admin/users',
-      label: 'Quản Lý Người Dùng',
+      label: 'Quản lý người dùng',
       show: role === 'Admin',
       icon: <IconShield className="nav-icon" />
     },
     {
       to: '/app/notifications',
-      label: 'Thông Báo',
+      label: 'Thông báo',
       show: true,
       badge: unreadCount > 0 ? unreadCount : null,
       icon: (
@@ -96,7 +96,7 @@ export function AppShell() {
     },
     {
       to: '/app/profile',
-      label: 'Hồ Sơ Cá Nhân',
+      label: 'Hồ sơ cá nhân',
       show: role === 'Student',
       icon: <IconUser className="nav-icon" />
     },
@@ -162,7 +162,7 @@ export function AppShell() {
             <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            <span>Đăng Xuất</span>
+            <span>Đăng xuất</span>
           </button>
         </div>
       </aside>
@@ -170,10 +170,7 @@ export function AppShell() {
       <main className="main">
         <header className="topbar">
           <div>
-            <div className="page-title">Hệ Thống Tư Vấn & Đặt Lịch Học Thuật</div>
-            <div className="muted small-text" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Academic Appointment & Consultation Portal
-            </div>
+            <div className="page-title">Hệ thống tư vấn và đặt lịch học thuật</div>
           </div>
           <div className="pill-role">{role || 'Guest'}</div>
         </header>

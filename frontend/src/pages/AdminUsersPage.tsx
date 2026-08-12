@@ -94,10 +94,10 @@ export function AdminUsersPage() {
           <div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
               <IconShield size={24} style={{ color: 'var(--accent)' }} />
-              <span>Quản Lý Người Dùng Hệ Thống</span>
+              <span>Quản lý người dùng hệ thống</span>
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              Xem danh sách tài khoản, cập nhật vai trò (Role) và quản lý trạng thái mở/khóa tài khoản.
+              Xem danh sách tài khoản, cập nhật vai trò và quản lý trạng thái tài khoản.
             </p>
           </div>
 
@@ -114,7 +114,7 @@ export function AdminUsersPage() {
               <span>Tìm kiếm tài khoản</span>
             </span>
             <input
-              placeholder="Nhập họ tên, tên đăng nhập (ngduytan), hoặc email..."
+              placeholder="Nhập họ tên, tên đăng nhập hoặc email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -123,12 +123,12 @@ export function AdminUsersPage() {
           <div className="field" style={{ width: 220 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <IconUser size={15} />
-              <span>Lọc theo Vai Trò</span>
+              <span>Lọc theo vai trò</span>
             </span>
             <select value={selectedRoleFilter} onChange={(e) => setSelectedRoleFilter(e.target.value)}>
               <option value="ALL">Tất cả vai trò</option>
-              <option value="Student">Sinh viên (Student)</option>
-              <option value="Lecturer">Giảng viên (Lecturer)</option>
+              <option value="Student">Sinh viên</option>
+              <option value="Lecturer">Giảng viên</option>
               <option value="Admin">Quản trị viên (Admin)</option>
             </select>
           </div>
@@ -222,7 +222,7 @@ export function AdminUsersPage() {
                   onClick={() => changeRole(user.userId)}
                   disabled={busyId === user.userId}
                 >
-                  Lưu Vai Trò
+                  Lưu vai trò
                 </button>
               </div>
 
@@ -236,12 +236,12 @@ export function AdminUsersPage() {
                 {user.isActive ? (
                   <>
                     <IconClose size={15} />
-                    <span>Khóa Tài Khoản</span>
+                    <span>Khóa tài khoản</span>
                   </>
                 ) : (
                   <>
                     <IconCheck size={15} />
-                    <span>Mở Khóa Tài Khoản</span>
+                    <span>Mở khóa tài khoản</span>
                   </>
                 )}
               </button>

@@ -71,7 +71,7 @@ export function LecturerSlotsPage() {
       <div className="panel">
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
           <IconClock size={24} style={{ color: 'var(--accent)' }} />
-          <span>Quản Lý Khung Giờ Rảnh Tư Vấn</span>
+          <span>Quản lý khung giờ rảnh tư vấn</span>
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
           Tạo mới và quản lý các khung giờ bạn sẵn sàng tư vấn cho sinh viên.
@@ -82,7 +82,7 @@ export function LecturerSlotsPage() {
       <form className="panel" onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
         <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
           <IconPlus size={20} style={{ color: 'var(--accent)' }} />
-          <span>Tạo Khung Giờ Rảnh Mới</span>
+          <span>Tạo khung giờ rảnh mới</span>
         </h2>
 
         {error ? (
@@ -94,7 +94,7 @@ export function LecturerSlotsPage() {
 
         <div className="grid-2">
           <label className="field">
-            <span>Thời gian bắt đầu (Start Time)</span>
+            <span>Thời gian bắt đầu *</span>
             <input
               type="datetime-local"
               value={form.startTime}
@@ -104,7 +104,7 @@ export function LecturerSlotsPage() {
           </label>
 
           <label className="field">
-            <span>Thời gian kết thúc (End Time)</span>
+            <span>Thời gian kết thúc *</span>
             <input
               type="datetime-local"
               value={form.endTime}
@@ -114,7 +114,7 @@ export function LecturerSlotsPage() {
           </label>
 
           <label className="field">
-            <span>Hình thức gặp (Meeting Type)</span>
+            <span>Hình thức gặp</span>
             <select
               value={form.meetingType}
               onChange={(e) => setForm((prev) => ({ ...prev, meetingType: e.target.value }))}
@@ -125,7 +125,7 @@ export function LecturerSlotsPage() {
           </label>
 
           <label className="field">
-            <span>Địa điểm hoặc Đường link gặp</span>
+            <span>Địa điểm hoặc link tư vấn</span>
             <input
               placeholder="Ví dụ: Phòng 302-A1 hoặc https://meet.google.com/abc..."
               value={form.locationOrLink}
@@ -137,7 +137,7 @@ export function LecturerSlotsPage() {
         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button className="btn btn-primary" type="submit" disabled={busy} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             <IconPlus size={16} />
-            <span>{busy ? 'Đang Lưu Khung Giờ...' : 'Thêm Slot Rảnh Này'}</span>
+            <span>{busy ? 'Đang lưu...' : 'Thêm khung giờ rảnh'}</span>
           </button>
         </div>
       </form>
@@ -146,7 +146,7 @@ export function LecturerSlotsPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
           <IconFileText size={18} />
-          <span>Các Khung Giờ Đã Tạo</span>
+          <span>Các khung giờ đã tạo</span>
         </h3>
 
         {loading ? (
@@ -180,7 +180,7 @@ export function LecturerSlotsPage() {
                 onClick={() => remove(slot.availabilitySlotId)}
               >
                 <IconTrash size={14} />
-                <span>Xóa Slot</span>
+                <span>Xóa slot</span>
               </button>
             </div>
           ))
