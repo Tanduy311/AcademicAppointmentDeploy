@@ -10,6 +10,7 @@ import {
   IconShield,
   IconBell,
   IconUser,
+  IconSidebarToggle,
 } from '../components/Icons';
 
 export function AppShell() {
@@ -17,6 +18,7 @@ export function AppShell() {
   const navigate = useNavigate();
   const role = user?.roleName ?? '';
   const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -109,17 +111,26 @@ export function AppShell() {
   ].filter((item) => item.show);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isSidebarCollapsed ? 'app-shell-collapsed' : ''}`}>
       <aside className="sidebar">
         <div>
           <div className="brand-section">
             <div className="brand-logo">
               <IconTeacher size={22} />
             </div>
-            <div>
+            <div className="brand-title-group">
               <div className="brand-title">Academic Appointment</div>
               <div className="brand-subtitle">Portal v1.0</div>
             </div>
+
+            <button
+              type="button"
+              className="main-sidebar-toggle-btn"
+              title={isSidebarCollapsed ? "Mở rộng menu chính" : "Thu gọn menu chính"}
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            >
+              <IconSidebarToggle size={18} />
+            </button>
           </div>
 
           <div className="user-card-mini">
@@ -134,7 +145,7 @@ export function AppShell() {
                 user?.fullName?.charAt(0).toUpperCase() || 'U'
               )}
             </div>
-            <div style={{ minWidth: 0 }}>
+            <div className="user-card-text" style={{ minWidth: 0 }}>
               <div className="user-info-name">{user?.fullName || 'User'}</div>
               <div className="user-info-role">{role}</div>
             </div>
@@ -142,11 +153,17 @@ export function AppShell() {
 
           <nav className="nav">
             {navItems.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.to === '/app'} className="nav-link">
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.to === '/app'}
+                className="nav-link"
+                title={isSidebarCollapsed ? item.label : undefined}
+              >
                 {item.icon}
-                <span>{item.label}</span>
+                <span className="nav-label-text">{item.label}</span>
                 {item.badge ? (
-                  <span className="badge badge-danger" style={{ marginLeft: 'auto', padding: '2px 6px', fontSize: '0.7rem' }}>
+                  <span className="badge badge-danger nav-badge" style={{ marginLeft: 'auto', padding: '2px 6px', fontSize: '0.7rem' }}>
                     {item.badge}
                   </span>
                 ) : null}
@@ -157,25 +174,34 @@ export function AppShell() {
 
         <div style={{ paddingTop: '20px', borderTop: '1px solid var(--border-subtle)' }}>
           <button
-            className="btn btn-secondary"
+            className="btn btn-secondary btn-logout"
             style={{ width: '100%' }}
             type="button"
+            title={isSidebarCollapsed ? "Đăng xuất" : undefined}
             onClick={() => {
               logout();
               navigate('/login');
             }}
           >
-            <svg style={{ width: 16, height: 16 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <svg style={{ width: 16, height: 16, flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            <span>Đăng xuất</span>
+            <span className="btn-logout-text">Đăng xuất</span>
           </button>
         </div>
       </aside>
 
       <main className="main">
         <header className="topbar">
-          <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              type="button"
+              className="topbar-sidebar-toggle-btn"
+              title={isSidebarCollapsed ? "Mở rộng menu chính" : "Thu gọn menu chính"}
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            >
+              <IconSidebarToggle size={18} />
+            </button>
             <div className="page-title">Hệ thống tư vấn và đặt lịch học thuật</div>
           </div>
           <div className="pill-role">{role || 'Guest'}</div>

@@ -203,16 +203,13 @@ export function WeeklyCalendar({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
   const [miniMonthDate, setMiniMonthDate] = useState<Date>(new Date(weekStart));
-  const [selectedSchedules, setSelectedSchedules] = useState<string[]>([
-    'Tư vấn đồ án',
-    'Lịch hẹn tư vấn',
-    'Khung giờ rảnh',
-    'Họp chuyên môn',
-    'Khác',
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([
+    'approved',
+    'pending',
+    'slot-open',
+    'cancelled',
   ]);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [isScheduleOpen, setIsScheduleOpen] = useState(true);
-  const [isCategoriesOpen, setIsCategoriesOpen] = useState(true);
+  const [isStatusFilterOpen, setIsStatusFilterOpen] = useState(true);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
   const normalizedWeekStart = startOfWeek(weekStart);
@@ -222,20 +219,25 @@ export function WeeklyCalendar({
   const rows = getRows();
   const gridHeight = rows.length * rowHeight;
 
-  // Filter events
+  // Filter events strictly by appointment status
   const filteredEvents = events.filter((event) => {
-    if (selectedCategory !== 'all') {
-      const cat = (event.category || '').toLowerCase();
-      if (cat && cat !== selectedCategory.toLowerCase()) return false;
+    let key = 'slate';
+    if (event.kind === 'slot') {
+      key = event.isAvailable ? 'slot-open' : 'slot-booked';
+    } else {
+      const s = (event.status || '').toLowerCase();
+      if (['approved', 'confirmed'].includes(s)) key = 'approved';
+      else if (s === 'pending') key = 'pending';
+      else if (['cancelled', 'canceled', 'rejected'].includes(s)) key = 'cancelled';
     }
-    return true;
+    return selectedStatuses.includes(key);
   });
 
   const miniDays = getMiniCalendarDays(miniMonthDate);
 
-  const toggleScheduleFilter = (item: string) => {
-    setSelectedSchedules((prev) =>
-      prev.includes(item) ? prev.filter((s) => s !== item) : [...prev, item]
+  const toggleStatusFilter = (statusKey: string) => {
+    setSelectedStatuses((prev) =>
+      prev.includes(statusKey) ? prev.filter((s) => s !== statusKey) : [...prev, statusKey]
     );
   };
 
@@ -257,6 +259,10 @@ export function WeeklyCalendar({
     setMiniMonthDate(today);
     onWeekChange(startOfWeek(today));
   };
+
+  const goToPreviousWeek = () => onWeekChange(addDays(normalizedWeekStart, -7));
+  const goToThisWeek = () => onWeekChange(startOfWeek(new Date()));
+  const goToNextWeek = () => onWeekChange(addDays(normalizedWeekStart, 7));
 
   return (
     <div className={`weekly-calendar-redesign ${isSidebarOpen ? 'sidebar-expanded' : 'sidebar-collapsed'}`}>
@@ -294,7 +300,7 @@ export function WeeklyCalendar({
               <IconChevronLeft size={16} />
             </button>
 
-            <button type="button" className="mini-month-label" onClick={goToToday} title="Về hôm nay">
+            <button type="button" className="mini-month-label" onClick={goToToday} title="Click để về hôm nay">
               {miniMonthDate.toLocaleString('vi-VN', { month: 'long', year: 'numeric' })}
             </button>
 
@@ -332,75 +338,61 @@ export function WeeklyCalendar({
           </div>
         </div>
 
-        {/* MY SCHEDULE CHECKLIST */}
+        {/* APPOINTMENT STATUS FILTER SECTION */}
         <div className="sidebar-accordion">
           <button
             type="button"
             className="accordion-header"
-            onClick={() => setIsScheduleOpen(!isScheduleOpen)}
+            onClick={() => setIsStatusFilterOpen(!isStatusFilterOpen)}
           >
-            <span>Phân loại lịch</span>
-            {isScheduleOpen ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
+            <span>Trạng thái cuộc hẹn</span>
+            {isStatusFilterOpen ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
           </button>
 
-          {isScheduleOpen && (
+          {isStatusFilterOpen && (
             <div className="accordion-content">
               {[
-                'Tư vấn đồ án',
-                'Lịch hẹn tư vấn',
-                'Khung giờ rảnh',
-                'Họp chuyên môn',
-                'Khác',
-              ].map((item) => {
-                const isChecked = selectedSchedules.includes(item);
+                {
+                  key: 'approved',
+                  name: 'Đã duyệt / Chấp nhận',
+                  color: '#22c55e',
+                  count: events.filter((e) => ['approved', 'confirmed'].includes((e.status || '').toLowerCase())).length,
+                },
+                {
+                  key: 'pending',
+                  name: 'Chờ duyệt',
+                  color: '#f59e0b',
+                  count: events.filter((e) => (e.status || '').toLowerCase() === 'pending').length,
+                },
+                {
+                  key: 'slot-open',
+                  name: 'Slot rảnh',
+                  color: '#3b82f6',
+                  count: events.filter((e) => e.kind === 'slot' && e.isAvailable).length,
+                },
+                {
+                  key: 'cancelled',
+                  name: 'Đã hủy / Từ chối',
+                  color: '#ef4444',
+                  count: events.filter((e) => ['cancelled', 'canceled', 'rejected'].includes((e.status || '').toLowerCase())).length,
+                },
+              ].map((st) => {
+                const isChecked = selectedStatuses.includes(st.key);
                 return (
-                  <label key={item} className="schedule-checkbox-item">
+                  <label key={st.key} className="schedule-checkbox-item">
                     <input
                       type="checkbox"
                       checked={isChecked}
-                      onChange={() => toggleScheduleFilter(item)}
+                      onChange={() => toggleStatusFilter(st.key)}
                     />
-                    <span className="checkbox-custom">{isChecked && <IconCheck size={12} />}</span>
-                    <span className="checkbox-label">{item}</span>
+                    <span className="checkbox-custom" style={{ borderColor: isChecked ? st.color : undefined, backgroundColor: isChecked ? st.color : undefined }}>
+                      {isChecked && <IconCheck size={12} />}
+                    </span>
+                    <span className="checkbox-label" style={{ flex: 1 }}>{st.name}</span>
+                    <span className="category-count">{st.count}</span>
                   </label>
                 );
               })}
-            </div>
-          )}
-        </div>
-
-        {/* CATEGORIES SECTION */}
-        <div className="sidebar-accordion">
-          <button
-            type="button"
-            className="accordion-header"
-            onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
-          >
-            <span>Trạng thái</span>
-            {isCategoriesOpen ? <IconChevronUp size={16} /> : <IconChevronDown size={16} />}
-          </button>
-
-          {isCategoriesOpen && (
-            <div className="accordion-content">
-              {[
-                { name: 'Đã duyệt', color: '#22c55e', count: events.filter(e => ['approved','confirmed'].includes((e.status||'').toLowerCase())).length },
-                { name: 'Chờ duyệt', color: '#f59e0b', count: events.filter(e => (e.status||'').toLowerCase() === 'pending').length },
-                { name: 'Slot rảnh', color: '#3b82f6', count: events.filter(e => e.kind === 'slot' && e.isAvailable).length },
-                { name: 'Đã hủy', color: '#ef4444', count: events.filter(e => ['cancelled','rejected'].includes((e.status||'').toLowerCase())).length },
-              ].map((cat) => (
-                <button
-                  key={cat.name}
-                  type="button"
-                  className={`category-item ${selectedCategory === cat.name ? 'category-active' : ''}`}
-                  onClick={() =>
-                    setSelectedCategory(selectedCategory === cat.name ? 'all' : cat.name)
-                  }
-                >
-                  <span className="category-color-dot" style={{ backgroundColor: cat.color }} />
-                  <span className="category-name">{cat.name}</span>
-                  <span className="category-count">{cat.count}</span>
-                </button>
-              ))}
             </div>
           )}
         </div>
@@ -415,7 +407,7 @@ export function WeeklyCalendar({
               <button
                 type="button"
                 className="btn-sidebar-expand"
-                title="Mở thanh menu bên trái"
+                title="Mở menu bên trái"
                 onClick={() => setIsSidebarOpen(true)}
               >
                 <IconSidebarToggle size={20} />
@@ -437,6 +429,33 @@ export function WeeklyCalendar({
             <div className="month-picker-dropdown" onClick={goToToday} title="Click để về hôm nay">
               <span className="month-picker-title">{formatMonthYear(weekStart)}</span>
               <IconChevronDown size={16} />
+            </div>
+
+            {/* WEEK NAVIGATION 3-BUTTON GROUP */}
+            <div className="week-nav-button-group">
+              <button
+                type="button"
+                className="btn-week-nav"
+                onClick={goToPreviousWeek}
+                title="Tuần trước"
+              >
+                <IconChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                className="btn-week-nav btn-week-nav-center"
+                onClick={goToThisWeek}
+              >
+                Tuần này
+              </button>
+              <button
+                type="button"
+                className="btn-week-nav"
+                onClick={goToNextWeek}
+                title="Tuần sau"
+              >
+                <IconChevronRight size={16} />
+              </button>
             </div>
 
             <div className="events-count-pill">
