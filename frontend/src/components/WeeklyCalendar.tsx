@@ -30,7 +30,7 @@ const gridStartMinute = 30;
 const gridEndHour = 17;
 const gridEndMinute = 30;
 const rowMinutes = 60;
-const rowHeight = 126;
+const rowHeight = 84;
 const totalGridMinutes = (gridEndHour * 60 + gridEndMinute) - (gridStartHour * 60 + gridStartMinute);
 const gridStartMinutes = gridStartHour * 60 + gridStartMinute;
 
@@ -157,7 +157,9 @@ export function WeeklyCalendar({
 
       <div className="weekly-calendar-scroll">
         <div className="weekly-calendar-grid">
-          <div className="weekly-calendar-corner" />
+          <div className="weekly-calendar-corner">
+            <span>Thời gian</span>
+          </div>
           {days.map((day, index) => (
             <div key={day.toISOString()} className="weekly-calendar-day-header">
               <span>{dayLabels[index]}</span>
@@ -196,7 +198,7 @@ export function WeeklyCalendar({
                       key={event.id}
                       type="button"
                       className={`weekly-calendar-event weekly-calendar-event-${eventTone(event)}`}
-                      style={{ top: layout.top + 8, height: Math.max(64, layout.height - 16) }}
+                      style={{ top: layout.top + 5, height: Math.max(48, layout.height - 10) }}
                       title={event.title}
                       onClick={(clickEvent) => {
                         clickEvent.stopPropagation();
