@@ -87,6 +87,18 @@ jobs:
             '.ConnectionStrings.DBConnection = $db' \
             ./publish/appsettings.json > "$tmp_file"
           mv "$tmp_file" ./publish/appsettings.json
+          echo '<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Updating</title></head><body><h2>Website đang được cập nhật, vui lòng quay lại sau ít phút.</h2></body></html>' > ./publish/app_offline.htm
+
+      - name: Enable App Offline (stop IIS process & release DLL locks)
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          ftp_host="${FTP_SERVER#ftp://}"
+          ftp_host="${ftp_host#ftps://}"
+          curl -s --ftp-create-dirs -T ./publish/app_offline.htm -u "$FTP_USERNAME:$FTP_PASSWORD" "ftp://$ftp_host/wwwroot/app_offline.htm" || true
+          sleep 3
 
       - name: Deploy to MonsterASP via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -97,3 +109,14 @@ jobs:
           local-dir: ./publish/
           server-dir: /wwwroot/
           dangerous-clean-slate: false
+
+      - name: Disable App Offline (bring IIS process back online)
+        if: always()
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          ftp_host="${FTP_SERVER#ftp://}"
+          ftp_host="${ftp_host#ftps://}"
+          curl -s -u "$FTP_USERNAME:$FTP_PASSWORD" "ftp://$ftp_host/wwwroot/" -X "DELE app_offline.htm" || true
