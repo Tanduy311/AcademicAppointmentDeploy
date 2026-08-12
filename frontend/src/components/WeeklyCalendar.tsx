@@ -39,7 +39,7 @@ interface WeeklyCalendarProps {
 const dayLabelsFull = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
 const dayLabelsShort = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
-// 1-hour time slots from 07:30 to 17:30 matching Screenshot 2
+// 1-hour time slots from 07:30 to 17:30
 const timeSlotRanges = [
   { label: '07:30 - 08:30', startHour: 7.5, endHour: 8.5 },
   { label: '08:30 - 09:30', startHour: 8.5, endHour: 9.5 },
@@ -53,9 +53,9 @@ const timeSlotRanges = [
   { label: '16:30 - 17:30', startHour: 16.5, endHour: 17.5 },
 ];
 
-const rowHeight = 90; // Height per 1-hour row
-const gridStartMinutes = 7.5 * 60; // 07:30 = 450 minutes
-const totalGridMinutes = (17.5 - 7.5) * 60; // 10 hours = 600 minutes
+const rowHeight = 90;
+const gridStartMinutes = 7.5 * 60;
+const totalGridMinutes = (17.5 - 7.5) * 60;
 
 function startOfWeek(date: Date) {
   const result = new Date(date);
@@ -167,7 +167,6 @@ function getMiniCalendarDays(currentDate: Date) {
   return days;
 }
 
-// Generate code tag e.g. "CSW 307", "MATH 104", "CSW 431", "MTH 171" matching Screenshot 2
 function getCourseCodeTag(event: CalendarEvent) {
   const raw = event.raw as Record<string, any> | undefined;
   if (raw?.courseCode) return raw.courseCode;
@@ -401,12 +400,11 @@ export function WeeklyCalendar({
           </div>
         </header>
 
-        {/* CONTROL ROW - Removed the 3 buttons on the right side as requested */}
+        {/* CONTROL ROW - Clean month label without chevron 'v' and without count pill */}
         <div className="calendar-controls-bar">
           <div className="controls-bar-left">
-            <div className="month-picker-dropdown" onClick={goToToday} title="Click để về hôm nay">
+            <div className="month-picker-label" onClick={goToToday} title="Click để về hôm nay">
               <span className="month-picker-title">{formatMonthYear(weekStart)}</span>
-              <IconChevronDown size={16} />
             </div>
 
             {/* WEEK NAVIGATION 3-BUTTON GROUP */}
@@ -435,20 +433,15 @@ export function WeeklyCalendar({
                 <IconChevronRight size={16} />
               </button>
             </div>
-
-            <div className="events-count-pill">
-              <IconCalendar size={14} />
-              <span>{filteredEvents.length} lịch hẹn</span>
-            </div>
           </div>
         </div>
 
-        {/* WEEKLY TIME GRID MATCHING SCREENSHOT 2 */}
+        {/* WEEKLY TIME GRID MATCHING SCREENSHOT 2 & 3 */}
         <div className="weekly-grid-container">
           <div className="weekly-grid-wrapper">
             {/* CORNER TIMEZONE HEADER */}
             <div className="grid-corner-cell">
-              <span>Múi giờ<br/>(UTC+07:00)</span>
+              <span>Múi giờ (UTC+07:00)</span>
             </div>
 
             {/* DAY COLUMNS HEADERS MATCHING SCREENSHOT 2 (Thứ 2 (05/10)...) */}
@@ -466,7 +459,7 @@ export function WeeklyCalendar({
               );
             })}
 
-            {/* TIME COLUMN MATCHING SCREENSHOT 2 (07:30 - 08:30...) */}
+            {/* WIDE TIME COLUMN FIT ON ONE LINE */}
             <div className="grid-time-column" style={{ height: gridHeight }}>
               {timeSlotRanges.map((slot) => (
                 <div key={slot.label} className="time-slot-cell" style={{ height: rowHeight }}>
@@ -499,7 +492,7 @@ export function WeeklyCalendar({
                     </button>
                   ))}
 
-                  {/* EVENT CARDS - STYLED EXACTLY AS SCREENSHOT 2 */}
+                  {/* EVENT CARDS */}
                   {dayEvents.map((event) => {
                     const layout = getEventLayout(event);
                     const tone = getEventTone(event);

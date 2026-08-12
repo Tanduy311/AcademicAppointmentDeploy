@@ -1077,7 +1077,7 @@ input:focus, textarea:focus, select:focus, .custom-select:focus {
 
 .weekly-grid-wrapper {
   display: grid;
-  grid-template-columns: 55px repeat(7, minmax(0, 1fr));
+  grid-template-columns: 110px repeat(7, minmax(0, 1fr));
   width: 100%;
   min-width: 0;
   box-sizing: border-box;
@@ -1090,10 +1090,11 @@ input:focus, textarea:focus, select:focus, .custom-select:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  color: #64748b;
-  padding: 12px 4px;
+  color: #475569;
+  padding: 12px 6px;
+  white-space: nowrap;
 }
 
 .grid-day-header {
@@ -1481,16 +1482,25 @@ input:focus, textarea:focus, select:focus, .custom-select:focus {
   color: #64748b;
 }
 
+.month-picker-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+  cursor: pointer;
+  user-select: none;
+}
+
 .time-slot-cell {
   border-bottom: 1px solid #f1f5f9;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.74rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: #334155;
-  padding: 0 4px;
+  padding: 0 6px;
   text-align: center;
+  white-space: nowrap;
 }
 
 .brand-logo {
