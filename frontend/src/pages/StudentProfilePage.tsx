@@ -1,7 +1,6 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import type { StudentDetailDto } from '../types/api';
-import { IconUser, IconBuilding, IconFileText, IconCheck, IconAlert, IconUpload, IconEdit, IconMail, IconPhone, IconCalendar } from '../components/Icons';
 import { useAuth } from '../context/AuthContext';
 
 export function StudentProfilePage() {
@@ -11,6 +10,7 @@ export function StudentProfilePage() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [msg, setMsg] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
 
   const [form, setForm] = useState({
@@ -65,12 +65,24 @@ export function StudentProfilePage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setSaving(true);
+    setSubmitted(true);
     setMsg(null);
+
+    const missing: string[] = [];
+    if (!form.fullName.trim()) missing.push('Họ và tên');
+    if (!form.emailAddress.trim()) missing.push('Email liên hệ');
+
+    if (missing.length > 0) {
+      setMsg({ type: 'danger', text: `Vui lòng nhập đầy đủ các trường bắt buộc (*): ${missing.join(', ')}.` });
+      return;
+    }
+
+    setSaving(true);
     try {
       const updated = await api.updateStudentProfile(form);
       setProfile(updated);
       setEditing(false);
+      setSubmitted(false);
       setMsg({ type: 'success', text: 'Cập nhật thông tin hồ sơ sinh viên thành công!' });
     } catch (err) {
       setMsg({ type: 'danger', text: err instanceof Error ? err.message : 'Cập nhật hồ sơ thất bại.' });
@@ -124,26 +136,18 @@ export function StudentProfilePage() {
         <button
           type="button"
           className="btn btn-primary"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
           onClick={() => {
             setEditing(!editing);
+            setSubmitted(false);
             setMsg(null);
           }}
         >
-          {editing ? (
-            <span>Đóng form</span>
-          ) : (
-            <>
-              <IconEdit size={16} />
-              <span>Chỉnh sửa hồ sơ</span>
-            </>
-          )}
+          <span>{editing ? 'Đóng form' : 'Chỉnh sửa hồ sơ'}</span>
         </button>
       </div>
 
       {msg && (
-        <div className={`badge badge-${msg.type}`} style={{ padding: 14, borderRadius: 'var(--radius-md)', width: '100%', display: 'flex', alignItems: 'center', gap: 8, textTransform: 'none' }}>
-          {msg.type === 'success' ? <IconCheck size={18} /> : <IconAlert size={18} />}
+        <div className={`badge badge-${msg.type}`} style={{ padding: 14, borderRadius: 'var(--radius-md)', width: '100%', textTransform: 'none' }}>
           <span>{msg.text}</span>
         </div>
       )}
@@ -151,9 +155,8 @@ export function StudentProfilePage() {
       {/* Edit Form Panel */}
       {editing ? (
         <form className="panel" onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <IconFileText size={22} style={{ color: 'var(--accent)' }} />
-            <span>Cập Nhật Thông Tin Cá Nhân</span>
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+            <span>Cập nhật thông tin cá nhân</span>
           </h2>
 
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
@@ -177,8 +180,7 @@ export function StudentProfilePage() {
               </div>
             </div>
 
-            <label className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: uploadingAvatar ? 'not-allowed' : 'pointer' }}>
-              <IconUpload size={16} />
+            <label className="btn btn-secondary" style={{ cursor: uploadingAvatar ? 'not-allowed' : 'pointer' }}>
               <span>{uploadingAvatar ? 'Đang tải...' : 'Đổi ảnh'}</span>
               <input
                 type="file"
@@ -192,27 +194,33 @@ export function StudentProfilePage() {
 
           <div className="grid-2">
             <label className="field">
-              <span>Họ và Tên</span>
+              <span>Họ và tên *</span>
               <input
                 type="text"
                 value={form.fullName}
                 onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
-                required
+                style={{ borderColor: submitted && !form.fullName.trim() ? 'var(--danger)' : undefined }}
               />
+              {submitted && !form.fullName.trim() && (
+                <span style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: 4 }}>Vui lòng nhập họ và tên</span>
+              )}
             </label>
 
             <label className="field">
-              <span>Email Liên Hệ</span>
+              <span>Email liên hệ *</span>
               <input
                 type="email"
                 value={form.emailAddress}
                 onChange={(e) => setForm((prev) => ({ ...prev, emailAddress: e.target.value }))}
-                required
+                style={{ borderColor: submitted && !form.emailAddress.trim() ? 'var(--danger)' : undefined }}
               />
+              {submitted && !form.emailAddress.trim() && (
+                <span style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: 4 }}>Vui lòng nhập email</span>
+              )}
             </label>
 
             <label className="field">
-              <span>Số Điện Thoại</span>
+              <span>Số điện thoại</span>
               <input
                 type="text"
                 value={form.phoneNumber}
@@ -222,17 +230,17 @@ export function StudentProfilePage() {
             </label>
 
             <label className="field">
-              <span>Chuyên Ngành (Major)</span>
+              <span>Chuyên ngành (Major)</span>
               <input
                 type="text"
                 value={form.major}
                 onChange={(e) => setForm((prev) => ({ ...prev, major: e.target.value }))}
-                placeholder="Ví dụ: Công Nghệ Thông Tin"
+                placeholder="Ví dụ: Công nghệ thông tin"
               />
             </label>
 
             <label className="field">
-              <span>Lớp Học Phần (Class)</span>
+              <span>Lớp học phần (Class)</span>
               <input
                 type="text"
                 value={form.className}
@@ -242,7 +250,7 @@ export function StudentProfilePage() {
             </label>
 
             <label className="field">
-              <span>Khóa Học (Academic Year)</span>
+              <span>Khóa học (Academic Year)</span>
               <input
                 type="text"
                 value={form.academicYear}
@@ -253,11 +261,11 @@ export function StudentProfilePage() {
           </div>
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-            <button type="button" className="btn btn-secondary" onClick={() => setEditing(false)}>
-              Hủy Bỏ
+            <button type="button" className="btn btn-secondary" onClick={() => { setEditing(false); setSubmitted(false); }}>
+              Hủy bỏ
             </button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? 'Đang Lưu...' : 'Lưu Thay Đổi'}
+              {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
           </div>
         </form>
@@ -265,16 +273,14 @@ export function StudentProfilePage() {
 
       {/* Read-Only Details Panel */}
       <div className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <IconFileText size={20} style={{ color: 'var(--accent)' }} />
-          <span>Thông Tin Học Tập Chi Tiết</span>
+        <h2 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+          <span>Thông tin học tập chi tiết</span>
         </h2>
 
         <div className="grid-2">
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <IconBuilding size={15} />
-              <span>Chuyên Ngành (Major)</span>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+              <span>Chuyên ngành (Major)</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               {profile.major || 'Chưa cập nhật'}
@@ -282,9 +288,8 @@ export function StudentProfilePage() {
           </div>
 
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <IconUser size={15} />
-              <span>Lớp Học Phần (Class)</span>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+              <span>Lớp học phần (Class)</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               {profile.className || 'Chưa cập nhật'}
@@ -292,9 +297,8 @@ export function StudentProfilePage() {
           </div>
 
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <IconMail size={15} />
-              <span>Email Sinh Viên</span>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+              <span>Email sinh viên</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               {profile.emailAddress}
@@ -302,9 +306,8 @@ export function StudentProfilePage() {
           </div>
 
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <IconPhone size={15} />
-              <span>Số Điện Thoại</span>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+              <span>Số điện thoại</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               {profile.phoneNumber || 'Chưa cập nhật'}
@@ -312,9 +315,8 @@ export function StudentProfilePage() {
           </div>
 
           <div style={{ background: '#f8fafc', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <IconCalendar size={15} />
-              <span>Khóa Học (Academic Year)</span>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+              <span>Khóa học (Academic Year)</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               {profile.academicYear || '2023 - 2027'}

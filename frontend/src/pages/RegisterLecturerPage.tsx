@@ -1,7 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { IconTeacher, IconAlert, IconArrowRight } from '../components/Icons';
 
 type LecturerForm = {
   accountName: string;
@@ -21,6 +20,8 @@ export function RegisterLecturerPage() {
   const navigate = useNavigate();
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
   const [form, setForm] = useState<LecturerForm>({
     accountName: '',
     password: '',
@@ -36,13 +37,21 @@ export function RegisterLecturerPage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!form.accountName || !form.password || !form.fullName || !form.lecturerCode) {
-      setError('Vui lòng điền đầy đủ các thông tin bắt buộc.');
+    setSubmitted(true);
+    setError('');
+
+    const missingFields: string[] = [];
+    if (!form.accountName.trim()) missingFields.push('Tên tài khoản');
+    if (!form.password.trim()) missingFields.push('Mật khẩu');
+    if (!form.fullName.trim()) missingFields.push('Họ và tên');
+    if (!form.lecturerCode.trim()) missingFields.push('Mã giảng viên');
+
+    if (missingFields.length > 0) {
+      setError(`Vui lòng nhập đầy đủ các trường bắt buộc (*): ${missingFields.join(', ')}.`);
       return;
     }
 
     setBusy(true);
-    setError('');
     try {
       await registerLecturer(form);
       navigate('/app');
@@ -57,9 +66,6 @@ export function RegisterLecturerPage() {
     <div className="auth-page">
       <div className="auth-card auth-card-wide">
         <div className="auth-header">
-          <div className="brand-logo" style={{ margin: '0 auto 12px auto', width: 48, height: 48 }}>
-            <IconTeacher size={26} />
-          </div>
           <h1 style={{ fontSize: '1.4rem' }}>Đăng ký tài khoản giảng viên</h1>
           <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: 6 }}>
             Cổng thông tin tư vấn và đặt lịch học thuật Academic Appointment
@@ -69,7 +75,6 @@ export function RegisterLecturerPage() {
         <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {error ? (
             <div className="badge badge-danger" style={{ width: '100%', padding: '10px 14px', borderRadius: 'var(--radius-md)', textTransform: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <IconAlert size={16} />
               <span>{error}</span>
             </div>
           ) : null}
@@ -86,8 +91,11 @@ export function RegisterLecturerPage() {
                   value={form.accountName}
                   onChange={(e) => setForm((prev) => ({ ...prev, accountName: e.target.value }))}
                   placeholder="Nhập tên tài khoản..."
-                  required
+                  style={{ borderColor: submitted && !form.accountName.trim() ? 'var(--danger)' : undefined }}
                 />
+                {submitted && !form.accountName.trim() && (
+                  <span style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: 4 }}>Vui lòng nhập tên tài khoản</span>
+                )}
               </label>
 
               <label className="field">
@@ -97,8 +105,11 @@ export function RegisterLecturerPage() {
                   value={form.password}
                   onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
                   placeholder="Nhập mật khẩu..."
-                  required
+                  style={{ borderColor: submitted && !form.password.trim() ? 'var(--danger)' : undefined }}
                 />
+                {submitted && !form.password.trim() && (
+                  <span style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: 4 }}>Vui lòng nhập mật khẩu</span>
+                )}
               </label>
             </div>
           </div>
@@ -115,8 +126,11 @@ export function RegisterLecturerPage() {
                   value={form.fullName}
                   onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
                   placeholder="Ví dụ: PGS.TS. Nguyễn Văn B"
-                  required
+                  style={{ borderColor: submitted && !form.fullName.trim() ? 'var(--danger)' : undefined }}
                 />
+                {submitted && !form.fullName.trim() && (
+                  <span style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: 4 }}>Vui lòng nhập họ và tên</span>
+                )}
               </label>
 
               <label className="field">
@@ -135,8 +149,11 @@ export function RegisterLecturerPage() {
                   value={form.lecturerCode}
                   onChange={(e) => setForm((prev) => ({ ...prev, lecturerCode: e.target.value }))}
                   placeholder="Ví dụ: GV004"
-                  required
+                  style={{ borderColor: submitted && !form.lecturerCode.trim() ? 'var(--danger)' : undefined }}
                 />
+                {submitted && !form.lecturerCode.trim() && (
+                  <span style={{ color: 'var(--danger)', fontSize: '0.78rem', marginTop: 4 }}>Vui lòng nhập mã giảng viên</span>
+                )}
               </label>
 
               <label className="field">
@@ -202,7 +219,7 @@ export function RegisterLecturerPage() {
 
         <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--border-subtle)', textAlign: 'center', fontSize: '0.88rem' }}>
           <Link to="/login" style={{ color: 'var(--accent)', fontWeight: 500 }}>
-            ← Quay lại trang đăng nhập
+            Quay lại trang đăng nhập
           </Link>
         </div>
       </div>
