@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '../services/api';
-import type { AdminUserListItemDto, RoleDto } from '../types/api';
+import type { AdminUserListItemDto } from '../types/api';
 import {
   IconShield,
   IconUser,
@@ -11,8 +11,6 @@ import {
 
 export function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUserListItemDto[]>([]);
-  const [roles, setRoles] = useState<RoleDto[]>([]);
-  const [roleSelections, setRoleSelections] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,17 +19,8 @@ export function AdminUsersPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const [u, r] = await Promise.all([api.users(), api.roles()]);
+      const u = await api.users();
       setUsers(u);
-      setRoles(r);
-      setRoleSelections(
-        Object.fromEntries(
-          u.map((user) => {
-            const currentRole = r.find((role) => role.roleName === user.roleName);
-            return [user.userId, currentRole?.roleId ?? r[0]?.roleId ?? 0];
-          })
-        )
-      );
     } finally {
       setLoading(false);
     }
@@ -48,20 +37,6 @@ export function AdminUsersPage() {
       await load();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể thay đổi trạng thái.');
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  const changeRole = async (userId: number) => {
-    const roleId = roleSelections[userId];
-    if (!roleId) return;
-    setBusyId(userId);
-    try {
-      await api.updateUserRole(userId, { roleId });
-      await load();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Không thể cập nhật vai trò.');
     } finally {
       setBusyId(null);
     }
@@ -97,7 +72,7 @@ export function AdminUsersPage() {
               <span>Quản lý người dùng hệ thống</span>
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              Xem danh sách tài khoản, cập nhật vai trò và quản lý trạng thái tài khoản.
+              Xem danh sách tài khoản và quản lý trạng thái hoạt động.
             </p>
           </div>
 
@@ -184,7 +159,7 @@ export function AdminUsersPage() {
                 borderTop: '1px solid var(--border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
+                justifyContent: 'flex-end',
                 flexWrap: 'wrap',
                 gap: 12,
                 background: '#f8fafc',
@@ -194,38 +169,6 @@ export function AdminUsersPage() {
                 borderBottomRightRadius: 'var(--radius-lg)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: 1, minWidth: 280 }}>
-                <span style={{ fontSize: '0.82rem', fontWeight: 500, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                  Phân quyền mới:
-                </span>
-                <select
-                  style={{ width: 'auto', minWidth: 160, padding: '6px 34px 6px 12px', fontSize: '0.85rem' }}
-                  value={roleSelections[user.userId] ?? ''}
-                  onChange={(e) =>
-                    setRoleSelections((prev) => ({
-                      ...prev,
-                      [user.userId]: Number(e.target.value),
-                    }))
-                  }
-                >
-                  {roles.map((role) => (
-                    <option key={role.roleId} value={role.roleId}>
-                      {role.roleName}
-                    </option>
-                  ))}
-                </select>
-
-                <button
-                  className="btn btn-secondary"
-                  type="button"
-                  style={{ fontSize: '0.82rem', padding: '6px 14px' }}
-                  onClick={() => changeRole(user.userId)}
-                  disabled={busyId === user.userId}
-                >
-                  Lưu vai trò
-                </button>
-              </div>
-
               <button
                 className="btn btn-secondary"
                 type="button"
