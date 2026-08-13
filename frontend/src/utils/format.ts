@@ -59,3 +59,19 @@ export function formatStatusLabel(status: string): string {
   if (['completed'].includes(norm)) return 'Hoàn thành';
   return titleCase(status);
 }
+
+export function cleanStringValue(val?: string | null): string {
+  if (!val) return '';
+  const trimmed = String(val).trim();
+  const lower = trimmed.toLowerCase();
+  if (lower === 'string' || lower === 'null' || lower === 'n/a' || lower === 'undefined') {
+    return '';
+  }
+  return trimmed;
+}
+
+export function formatDisplayValue(val?: string | null, fallback = 'Chưa cập nhật'): string {
+  const cleaned = cleanStringValue(val);
+  return cleaned || fallback;
+}
+

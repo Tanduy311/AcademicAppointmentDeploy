@@ -2,6 +2,7 @@ import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import type { LecturerDetailDto } from '../types/api';
 import { useAuth } from '../context/AuthContext';
+import { cleanStringValue, formatDisplayValue } from '../utils/format';
 
 export function LecturerProfilePage() {
   const { user, refreshMe } = useAuth();
@@ -29,13 +30,13 @@ export function LecturerProfilePage() {
       const data = await api.myLecturerProfile();
       setProfile(data);
       setForm({
-        fullName: data.fullName || '',
-        emailAddress: data.emailAddress || '',
-        phoneNumber: data.phoneNumber || '',
-        department: data.department || '',
-        specialization: data.specialization || '',
-        officeLocation: data.officeLocation || '',
-        consultationDescription: data.consultationDescription || '',
+        fullName: cleanStringValue(data.fullName),
+        emailAddress: cleanStringValue(data.emailAddress),
+        phoneNumber: cleanStringValue(data.phoneNumber),
+        department: cleanStringValue(data.department),
+        specialization: cleanStringValue(data.specialization),
+        officeLocation: cleanStringValue(data.officeLocation),
+        consultationDescription: cleanStringValue(data.consultationDescription),
       });
     } finally {
       setLoading(false);
@@ -106,6 +107,7 @@ export function LecturerProfilePage() {
   }
 
   const avatarUrl = user?.avatarUrl;
+  const cleanDept = cleanStringValue(profile.department);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -132,7 +134,7 @@ export function LecturerProfilePage() {
 
             <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <span>Mã GV: <strong style={{ color: 'var(--text-primary)' }}>{profile.lecturerCode}</strong></span>
-              {profile.department && <span>• Khoa: <strong>{profile.department}</strong></span>}
+              {cleanDept ? <span>• Khoa: <strong>{cleanDept}</strong></span> : null}
             </div>
           </div>
         </div>
@@ -299,7 +301,7 @@ export function LecturerProfilePage() {
               <span>Khoa công tác</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {profile.department || 'Chưa cập nhật'}
+              {formatDisplayValue(profile.department)}
             </div>
           </div>
 
@@ -308,7 +310,7 @@ export function LecturerProfilePage() {
               <span>Chuyên môn chính</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {profile.specialization || 'Chưa cập nhật'}
+              {formatDisplayValue(profile.specialization)}
             </div>
           </div>
 
@@ -317,7 +319,7 @@ export function LecturerProfilePage() {
               <span>Văn phòng làm việc</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {profile.officeLocation || 'Chưa cập nhật'}
+              {formatDisplayValue(profile.officeLocation)}
             </div>
           </div>
 
@@ -326,7 +328,7 @@ export function LecturerProfilePage() {
               <span>Số điện thoại</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {profile.phoneNumber || 'Chưa cập nhật'}
+              {formatDisplayValue(profile.phoneNumber)}
             </div>
           </div>
 
@@ -335,7 +337,7 @@ export function LecturerProfilePage() {
               <span>Mô tả tư vấn và định hướng</span>
             </div>
             <div style={{ fontSize: '0.95rem', color: 'var(--text-primary)', lineHeight: 1.5 }}>
-              {profile.consultationDescription || 'Chưa cập nhật mô tả'}
+              {formatDisplayValue(profile.consultationDescription, 'Chưa cập nhật mô tả')}
             </div>
           </div>
         </div>

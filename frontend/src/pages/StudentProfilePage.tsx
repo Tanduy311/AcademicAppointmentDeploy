@@ -2,6 +2,7 @@ import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { api } from '../services/api';
 import type { StudentDetailDto } from '../types/api';
 import { useAuth } from '../context/AuthContext';
+import { cleanStringValue, formatDisplayValue } from '../utils/format';
 
 export function StudentProfilePage() {
   const { refreshMe } = useAuth();
@@ -28,12 +29,12 @@ export function StudentProfilePage() {
       const data = await api.myStudentProfile();
       setProfile(data);
       setForm({
-        fullName: data.fullName || '',
-        emailAddress: data.emailAddress || '',
-        phoneNumber: data.phoneNumber || '',
-        major: data.major || '',
-        className: data.className || '',
-        academicYear: data.academicYear || '',
+        fullName: cleanStringValue(data.fullName),
+        emailAddress: cleanStringValue(data.emailAddress),
+        phoneNumber: cleanStringValue(data.phoneNumber),
+        major: cleanStringValue(data.major),
+        className: cleanStringValue(data.className),
+        academicYear: cleanStringValue(data.academicYear),
       });
     } finally {
       setLoading(false);
@@ -103,6 +104,8 @@ export function StudentProfilePage() {
     return <div className="panel">Không tìm thấy thông tin sinh viên.</div>;
   }
 
+  const cleanMajor = cleanStringValue(profile.major);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Header Info Panel */}
@@ -128,7 +131,7 @@ export function StudentProfilePage() {
 
             <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', gap: 16, flexWrap: 'wrap' }}>
               <span>Mã SV: <strong style={{ color: 'var(--text-primary)' }}>{profile.studentCode}</strong></span>
-              {profile.major && <span>• Ngành: <strong>{profile.major}</strong></span>}
+              {cleanMajor ? <span>• Ngành: <strong>{cleanMajor}</strong></span> : null}
             </div>
           </div>
         </div>
@@ -283,7 +286,7 @@ export function StudentProfilePage() {
               <span>Chuyên ngành (Major)</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {profile.major || 'Chưa cập nhật'}
+              {formatDisplayValue(profile.major)}
             </div>
           </div>
 
@@ -292,7 +295,7 @@ export function StudentProfilePage() {
               <span>Lớp học phần (Class)</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {profile.className || 'Chưa cập nhật'}
+              {formatDisplayValue(profile.className)}
             </div>
           </div>
 
@@ -301,7 +304,7 @@ export function StudentProfilePage() {
               <span>Email sinh viên</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {profile.emailAddress}
+              {formatDisplayValue(profile.emailAddress)}
             </div>
           </div>
 
@@ -310,7 +313,7 @@ export function StudentProfilePage() {
               <span>Số điện thoại</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {profile.phoneNumber || 'Chưa cập nhật'}
+              {formatDisplayValue(profile.phoneNumber)}
             </div>
           </div>
 
@@ -319,7 +322,7 @@ export function StudentProfilePage() {
               <span>Khóa học (Academic Year)</span>
             </div>
             <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {profile.academicYear || '2023 - 2027'}
+              {formatDisplayValue(profile.academicYear)}
             </div>
           </div>
         </div>

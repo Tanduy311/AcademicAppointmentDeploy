@@ -12,6 +12,8 @@ import {
   IconArrowRight,
 } from '../components/Icons';
 
+import { cleanStringValue, formatDisplayValue } from '../utils/format';
+
 export function LecturersPage() {
   const [items, setItems] = useState<LecturerListItemDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,15 +29,17 @@ export function LecturersPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const departments = ['ALL', ...Array.from(new Set(items.map((i) => i.department).filter((d): d is string => Boolean(d))))];
+  const departments = ['ALL', ...Array.from(new Set(items.map((i) => cleanStringValue(i.department)).filter(Boolean)))];
 
   const filteredItems = items.filter((item) => {
+    const cleanSpec = cleanStringValue(item.specialization);
+    const cleanDept = cleanStringValue(item.department);
     const matchesSearch =
       item.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.lecturerCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.specialization && item.specialization.toLowerCase().includes(searchQuery.toLowerCase()));
+      cleanSpec.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesDept = selectedDept === 'ALL' || item.department === selectedDept;
+    const matchesDept = selectedDept === 'ALL' || cleanDept === selectedDept;
 
     return matchesSearch && matchesDept;
   });
@@ -116,20 +120,20 @@ export function LecturersPage() {
                   </div>
                 </div>
 
-                <span className="badge badge-neutral">{item.department || 'Khoa CNTT'}</span>
+                <span className="badge badge-neutral">{formatDisplayValue(item.department, 'Khoa CNTT')}</span>
               </div>
 
-              {item.specialization ? (
+              {cleanStringValue(item.specialization) ? (
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                   <IconTarget size={15} style={{ color: 'var(--accent)' }} />
-                  <span><strong>Chuyên môn:</strong> {item.specialization}</span>
+                  <span><strong>Chuyên môn:</strong> {cleanStringValue(item.specialization)}</span>
                 </div>
               ) : null}
 
-              {item.officeLocation ? (
+              {cleanStringValue(item.officeLocation) ? (
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <IconMapPin size={15} />
-                  <span><strong>Văn phòng:</strong> {item.officeLocation}</span>
+                  <span><strong>Văn phòng:</strong> {cleanStringValue(item.officeLocation)}</span>
                 </div>
               ) : null}
             </div>
