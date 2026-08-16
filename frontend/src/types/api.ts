@@ -126,6 +126,7 @@ export interface AdminUserListItemDto {
   emailAddress: string;
   phoneNumber?: string | null;
   roleName: string;
+  roleNames?: string[];
   isActive: boolean;
   studentId?: number | null;
   lecturerId?: number | null;
@@ -226,6 +227,7 @@ export interface AdminUserListItemDto {
   emailAddress: string;
   phoneNumber?: string | null;
   roleName: string;
+  roleNames?: string[];
   isActive: boolean;
   studentId?: number | null;
   lecturerId?: number | null;

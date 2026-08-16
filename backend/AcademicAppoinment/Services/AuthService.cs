@@ -49,13 +49,18 @@ namespace AcademicAppoinment.Services
                 FullName = dto.FullName,
                 EmailAddress = dto.EmailAddress,
                 PhoneNumber = dto.PhoneNumber,
-                RoleId = 2,
                 IsActive = true,
                 CreatedAt = DateTime.Now
             };
 
             _repository.AddUser(user);
             await _repository.SaveChangesAsync();
+
+            _repository.AddUserRole(new UserRole
+            {
+                UserId = user.UserId,
+                RoleId = 2
+            });
 
             var student = new Student
             {
@@ -74,7 +79,7 @@ namespace AcademicAppoinment.Services
                 await transaction.CommitAsync();
             }
 
-            var token = _jwtTokenHelper.GenerateToken(user, "Student", studentId: student.StudentId);
+            var token = _jwtTokenHelper.GenerateToken(user, ["Student"], studentId: student.StudentId);
 
             return new AuthResponseDto
             {
@@ -111,13 +116,18 @@ namespace AcademicAppoinment.Services
                 FullName = dto.FullName,
                 EmailAddress = dto.EmailAddress,
                 PhoneNumber = dto.PhoneNumber,
-                RoleId = 3,
                 IsActive = true,
                 CreatedAt = DateTime.Now
             };
 
             _repository.AddUser(user);
             await _repository.SaveChangesAsync();
+
+            _repository.AddUserRole(new UserRole
+            {
+                UserId = user.UserId,
+                RoleId = 3
+            });
 
             var lecturer = new Lecturer
             {
@@ -137,7 +147,7 @@ namespace AcademicAppoinment.Services
                 await transaction.CommitAsync();
             }
 
-            var token = _jwtTokenHelper.GenerateToken(user, "Lecturer", lecturerId: lecturer.LecturerId);
+            var token = _jwtTokenHelper.GenerateToken(user, ["Lecturer"], lecturerId: lecturer.LecturerId);
 
             return new AuthResponseDto
             {
@@ -165,11 +175,12 @@ namespace AcademicAppoinment.Services
                 throw new UnauthorizedAccessException("Tài khoản của bạn đã bị khóa.");
             }
 
-            var roleName = user.Role?.RoleName ?? "User";
+            var roleName = RoleNameResolver.ResolvePrimaryRole(user);
+            var roleNames = RoleNameResolver.GetRoleNames(user);
             int? studentId = user.Student?.StudentId;
             int? lecturerId = user.Lecturer?.LecturerId;
 
-            var token = _jwtTokenHelper.GenerateToken(user, roleName, studentId, lecturerId);
+            var token = _jwtTokenHelper.GenerateToken(user, roleNames, studentId, lecturerId);
 
             return new AuthResponseDto
             {
@@ -207,7 +218,7 @@ namespace AcademicAppoinment.Services
                 EmailAddress = currentUser.EmailAddress,
                 PhoneNumber = currentUser.PhoneNumber,
                 AvatarUrl = currentUser.AvatarUrl,
-                RoleName = currentUser.Role?.RoleName,
+                RoleName = RoleNameResolver.ResolvePrimaryRole(currentUser),
                 StudentInfo = currentUser.Student,
                 LecturerInfo = currentUser.Lecturer
             };
@@ -267,7 +278,7 @@ namespace AcademicAppoinment.Services
                 EmailAddress = refreshed.EmailAddress,
                 PhoneNumber = refreshed.PhoneNumber,
                 AvatarUrl = refreshed.AvatarUrl,
-                RoleName = refreshed.Role?.RoleName,
+                RoleName = RoleNameResolver.ResolvePrimaryRole(refreshed),
                 StudentInfo = refreshed.Student,
                 LecturerInfo = refreshed.Lecturer
             };

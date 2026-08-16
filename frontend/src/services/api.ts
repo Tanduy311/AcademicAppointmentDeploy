@@ -126,6 +126,15 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(dto),
     }),
+  addUserRole: (userId: number, dto: UpdateUserRoleDto) =>
+    request<{ message: string }>(`/api/admin/users/${userId}/roles`, {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    }),
+  removeUserRole: (userId: number, roleId: number) =>
+    request<{ message: string }>(`/api/admin/users/${userId}/roles/${roleId}`, {
+      method: 'DELETE',
+    }),
 
   notifications: () => request<NotificationResponseDto[]>('/api/notifications'),
   unreadCount: () => request<{ unreadCount: number }>('/api/notifications/unread-count'),

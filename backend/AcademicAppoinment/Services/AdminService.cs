@@ -1,5 +1,6 @@
 using AcademicAppoinment.DTOs.Admin;
 using AcademicAppoinment.DTOs.Appointments;
+using AcademicAppoinment.Helpers;
 using AcademicAppoinment.Helpers.Exceptions;
 using AcademicAppoinment.Models;
 using AcademicAppoinment.Repositories;
@@ -71,35 +72,60 @@ namespace AcademicAppoinment.Services
 
         public async Task<bool> SetUserRoleAsync(int userId, int roleId, ClaimsPrincipal currentUser)
         {
-            var currentUserId = GetCurrentUserId(currentUser);
-            if (currentUserId == userId)
+            var user = await GetTargetUserForRoleChangeAsync(userId, currentUser, "Bạn không thể tự đổi role của chính mình.");
+            var role = await GetValidRoleForUserAsync(user, roleId);
+
+            if (user.UserRoles.Count == 1 && user.UserRoles.Any(ur => ur.RoleId == roleId))
             {
-                throw new ForbiddenAccessException("Bạn không thể tự đổi role của chính mình.");
+                return true;
             }
 
-            var user = await _repository.GetUserByIdWithDetailsAsync(userId);
-            if (user == null)
+            user.UserRoles.Clear();
+            user.UserRoles.Add(new UserRole
             {
-                throw new KeyNotFoundException("Không tìm thấy người dùng.");
+                UserId = user.UserId,
+                RoleId = roleId
+            });
+
+            await _repository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> AddUserRoleAsync(int userId, int roleId, ClaimsPrincipal currentUser)
+        {
+            var user = await GetTargetUserForRoleChangeAsync(userId, currentUser, "Bạn không thể tự thêm role cho chính mình.");
+            var role = await GetValidRoleForUserAsync(user, roleId);
+
+            if (user.UserRoles.Any(ur => ur.RoleId == role.RoleId))
+            {
+                return true;
             }
 
-            var role = await _repository.GetRoleByIdAsync(roleId);
-            if (role == null)
+            user.UserRoles.Add(new UserRole
             {
-                throw new ArgumentException("Role không hợp lệ.");
+                UserId = user.UserId,
+                RoleId = role.RoleId
+            });
+
+            await _repository.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> RemoveUserRoleAsync(int userId, int roleId, ClaimsPrincipal currentUser)
+        {
+            var user = await GetTargetUserForRoleChangeAsync(userId, currentUser, "Bạn không thể tự gỡ role của chính mình.");
+            var userRole = user.UserRoles.FirstOrDefault(ur => ur.RoleId == roleId);
+            if (userRole == null)
+            {
+                return true;
             }
 
-            if (string.Equals(role.RoleName, "Student", StringComparison.OrdinalIgnoreCase) && user.Student == null)
+            if (user.UserRoles.Count <= 1)
             {
-                throw new ArgumentException("Không thể đổi sang role Student vì người dùng chưa có hồ sơ sinh viên.");
+                throw new ArgumentException("Người dùng phải có ít nhất một role.");
             }
 
-            if (string.Equals(role.RoleName, "Lecturer", StringComparison.OrdinalIgnoreCase) && user.Lecturer == null)
-            {
-                throw new ArgumentException("Không thể đổi sang role Lecturer vì người dùng chưa có hồ sơ giảng viên.");
-            }
-
-            user.RoleId = roleId;
+            user.UserRoles.Remove(userRole);
             await _repository.SaveChangesAsync();
             return true;
         }
@@ -113,7 +139,8 @@ namespace AcademicAppoinment.Services
                 FullName = user.FullName,
                 EmailAddress = user.EmailAddress,
                 PhoneNumber = user.PhoneNumber,
-                RoleName = user.Role?.RoleName ?? "",
+                RoleName = RoleNameResolver.ResolvePrimaryRole(user),
+                RoleNames = RoleNameResolver.GetRoleNames(user),
                 IsActive = user.IsActive,
                 StudentId = user.Student?.StudentId,
                 LecturerId = user.Lecturer?.LecturerId,
@@ -130,7 +157,8 @@ namespace AcademicAppoinment.Services
                 FullName = user.FullName,
                 EmailAddress = user.EmailAddress,
                 PhoneNumber = user.PhoneNumber,
-                RoleName = user.Role?.RoleName ?? "",
+                RoleName = RoleNameResolver.ResolvePrimaryRole(user),
+                RoleNames = RoleNameResolver.GetRoleNames(user),
                 IsActive = user.IsActive,
                 CreatedAt = user.CreatedAt,
                 StudentInfo = user.Student == null ? null : new StudentAdminInfoDto
@@ -177,6 +205,44 @@ namespace AcademicAppoinment.Services
                 CreatedAt = appointment.CreatedAt,
                 UpdatedAt = appointment.UpdatedAt
             };
+        }
+
+        private async Task<User> GetTargetUserForRoleChangeAsync(int userId, ClaimsPrincipal currentUser, string selfEditMessage)
+        {
+            var currentUserId = GetCurrentUserId(currentUser);
+            if (currentUserId == userId)
+            {
+                throw new ForbiddenAccessException(selfEditMessage);
+            }
+
+            var user = await _repository.GetUserByIdWithDetailsAsync(userId);
+            if (user == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy người dùng.");
+            }
+
+            return user;
+        }
+
+        private async Task<Role> GetValidRoleForUserAsync(User user, int roleId)
+        {
+            var role = await _repository.GetRoleByIdAsync(roleId);
+            if (role == null)
+            {
+                throw new ArgumentException("Role không hợp lệ.");
+            }
+
+            if (string.Equals(role.RoleName, "Student", StringComparison.OrdinalIgnoreCase) && user.Student == null)
+            {
+                throw new ArgumentException("Không thể gán role Student vì người dùng chưa có hồ sơ sinh viên.");
+            }
+
+            if (string.Equals(role.RoleName, "Lecturer", StringComparison.OrdinalIgnoreCase) && user.Lecturer == null)
+            {
+                throw new ArgumentException("Không thể gán role Lecturer vì người dùng chưa có hồ sơ giảng viên.");
+            }
+
+            return role;
         }
 
         private static int GetCurrentUserId(ClaimsPrincipal user)

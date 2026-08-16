@@ -58,5 +58,19 @@ namespace AcademicAppoinment.Controllers
             await _adminService.SetUserRoleAsync(userId, dto.RoleId, User);
             return Ok(new { message = "Cập nhật role thành công." });
         }
+
+        [HttpPost("users/{userId}/roles")]
+        public async Task<IActionResult> AddRole(int userId, [FromBody] UpdateUserRoleDto dto)
+        {
+            await _adminService.AddUserRoleAsync(userId, dto.RoleId, User);
+            return Ok(new { message = "Thêm role thành công." });
+        }
+
+        [HttpDelete("users/{userId}/roles/{roleId}")]
+        public async Task<IActionResult> RemoveRole(int userId, int roleId)
+        {
+            await _adminService.RemoveUserRoleAsync(userId, roleId, User);
+            return Ok(new { message = "Gỡ role thành công." });
+        }
     }
 }

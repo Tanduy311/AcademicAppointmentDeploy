@@ -30,9 +30,6 @@ namespace AcademicAppoinment.Models
         [MaxLength(50)]
         public required string FullName { get; set; }
 
-        // Khóa ngoại tới Role
-        public int RoleId { get; set; }
-
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
@@ -40,7 +37,8 @@ namespace AcademicAppoinment.Models
         // Navigation properties
 
         [JsonIgnore]
-        public Role? Role { get; set; }
+        public ICollection<UserRole> UserRoles { get; set; }
+            = new List<UserRole>();
 
         [JsonIgnore]
         public Student? Student { get; set; }

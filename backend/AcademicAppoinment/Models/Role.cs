@@ -11,8 +11,8 @@ namespace AcademicAppoinment.Models
         [MaxLength(50)]
         public string RoleName { get; set; } = null!;
 
-        // Một role có thể thuộc nhiều user
+        // Một role có thể được gán cho nhiều user qua bảng nối UserRoles.
         [JsonIgnore]
-        public ICollection<User> Users { get; set; } = new List<User>();
+        public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     }
 }

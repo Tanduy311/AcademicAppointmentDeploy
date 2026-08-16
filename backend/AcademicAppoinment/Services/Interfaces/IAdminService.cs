@@ -12,5 +12,7 @@ namespace AcademicAppoinment.Services.Interfaces
         Task<IReadOnlyList<RoleDto>> GetRolesAsync();
         Task<bool> SetUserActiveAsync(int userId, bool isActive, ClaimsPrincipal currentUser);
         Task<bool> SetUserRoleAsync(int userId, int roleId, ClaimsPrincipal currentUser);
+        Task<bool> AddUserRoleAsync(int userId, int roleId, ClaimsPrincipal currentUser);
+        Task<bool> RemoveUserRoleAsync(int userId, int roleId, ClaimsPrincipal currentUser);
     }
 }

@@ -53,9 +53,9 @@ namespace AcademicAppoinment.Tests
                 FullName = "Student Two",
                 EmailAddress = "used@test.local",
                 PhoneNumber = "0900000002",
-                RoleId = 2,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UserRoles = [new UserRole { RoleId = 2 }]
             });
             context.SaveChanges();
 
@@ -88,9 +88,9 @@ namespace AcademicAppoinment.Tests
                 FullName = "Student One",
                 EmailAddress = "student1@test.local",
                 PhoneNumber = "0900000001",
-                RoleId = 2,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UserRoles = [new UserRole { RoleId = 2 }]
             };
 
             var student = new Student

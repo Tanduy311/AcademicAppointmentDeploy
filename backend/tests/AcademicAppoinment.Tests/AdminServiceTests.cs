@@ -38,9 +38,9 @@ namespace AcademicAppoinment.Tests
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword("User@123"),
                 FullName = "Plain User",
                 EmailAddress = "plain@test.local",
-                RoleId = 1,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UserRoles = [new UserRole { RoleId = 1 }]
             });
             context.SaveChanges();
 
@@ -49,6 +49,42 @@ namespace AcademicAppoinment.Tests
 
             await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
                 service.SetUserRoleAsync(2, 3, principal));
+        }
+
+        [TestMethod]
+        public async Task AddUserRoleAsync_AddsRole_WhenRoleIsValid()
+        {
+            using var context = TestDbFactory.CreateContext(nameof(AddUserRoleAsync_AddsRole_WhenRoleIsValid));
+            SeedRoles(context);
+            SeedAdminUser(context);
+            SeedStudentUser(context);
+
+            var service = new AdminService(new AppRepository(context));
+            var principal = TestDbFactory.CreatePrincipal(new Claim(ClaimTypes.NameIdentifier, "1"));
+
+            await service.AddUserRoleAsync(2, 1, principal);
+
+            Assert.IsTrue(context.UserRoles.Any(ur => ur.UserId == 2 && ur.RoleId == 1));
+            Assert.IsTrue(context.UserRoles.Any(ur => ur.UserId == 2 && ur.RoleId == 2));
+        }
+
+        [TestMethod]
+        public async Task RemoveUserRoleAsync_RemovesRole_WhenUserHasMultipleRoles()
+        {
+            using var context = TestDbFactory.CreateContext(nameof(RemoveUserRoleAsync_RemovesRole_WhenUserHasMultipleRoles));
+            SeedRoles(context);
+            SeedAdminUser(context);
+            SeedStudentUser(context);
+            context.UserRoles.Add(new UserRole { UserId = 2, RoleId = 1 });
+            context.SaveChanges();
+
+            var service = new AdminService(new AppRepository(context));
+            var principal = TestDbFactory.CreatePrincipal(new Claim(ClaimTypes.NameIdentifier, "1"));
+
+            await service.RemoveUserRoleAsync(2, 1, principal);
+
+            Assert.IsFalse(context.UserRoles.Any(ur => ur.UserId == 2 && ur.RoleId == 1));
+            Assert.IsTrue(context.UserRoles.Any(ur => ur.UserId == 2 && ur.RoleId == 2));
         }
 
         private static void SeedRoles(AppDbContext context)
@@ -70,10 +106,36 @@ namespace AcademicAppoinment.Tests
                 FullName = "System Admin",
                 EmailAddress = "admin@test.local",
                 PhoneNumber = "0900000000",
-                RoleId = 1,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UserRoles = [new UserRole { RoleId = 1 }]
             });
+            context.SaveChanges();
+        }
+
+        private static void SeedStudentUser(AppDbContext context)
+        {
+            context.Users.Add(new User
+            {
+                UserId = 2,
+                AccountName = "student",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Student@123"),
+                FullName = "Student User",
+                EmailAddress = "student@test.local",
+                PhoneNumber = "0900000002",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UserRoles = [new UserRole { RoleId = 2 }]
+            });
+
+            context.Students.Add(new Student
+            {
+                StudentId = 2,
+                UserId = 2,
+                StudentCode = "SV002",
+                Major = "IT"
+            });
+
             context.SaveChanges();
         }
     }

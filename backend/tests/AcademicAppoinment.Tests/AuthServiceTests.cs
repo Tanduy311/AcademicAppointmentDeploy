@@ -94,9 +94,9 @@ namespace AcademicAppoinment.Tests
                 PhoneNumber = "0900000001",
                 AvatarUrl = "https://cdn.test/old-avatar.png",
                 AvatarBlobName = "avatar-old.png",
-                RoleId = 2,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UserRoles = [new UserRole { RoleId = 2 }]
             };
 
             var student = new Student

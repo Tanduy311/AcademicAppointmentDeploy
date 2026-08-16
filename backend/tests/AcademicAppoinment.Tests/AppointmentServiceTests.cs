@@ -128,9 +128,9 @@ namespace AcademicAppoinment.Tests
                 FullName = "Lecturer One",
                 EmailAddress = "lecturer@test.local",
                 PhoneNumber = "0900000002",
-                RoleId = 3,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UserRoles = [new UserRole { RoleId = 3 }]
             };
 
             var studentUser = new User
@@ -141,9 +141,9 @@ namespace AcademicAppoinment.Tests
                 FullName = "Student One",
                 EmailAddress = "student@test.local",
                 PhoneNumber = "0900000003",
-                RoleId = 2,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UserRoles = [new UserRole { RoleId = 2 }]
             };
 
             var lecturer = new Lecturer
@@ -202,9 +202,9 @@ namespace AcademicAppoinment.Tests
                 FullName = "Lecturer One",
                 EmailAddress = "lecturer@test.local",
                 PhoneNumber = "0900000002",
-                RoleId = 3,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UserRoles = [new UserRole { RoleId = 3 }]
             };
 
             var lecturer = new Lecturer

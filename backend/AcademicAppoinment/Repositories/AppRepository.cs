@@ -26,28 +26,32 @@ namespace AcademicAppoinment.Repositories
 
         public Task<User?> GetUserByAccountNameAsync(string accountName) =>
             _context.Users
-                .Include(u => u.Role)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
                 .Include(u => u.Student)
                 .Include(u => u.Lecturer)
                 .FirstOrDefaultAsync(u => u.AccountName == accountName);
 
         public Task<User?> GetUserWithDetailsByIdAsync(int userId) =>
             _context.Users
-                .Include(u => u.Role)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
                 .Include(u => u.Student)
                 .Include(u => u.Lecturer)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
         public Task<User?> GetUserByIdWithDetailsAsync(int userId) =>
             _context.Users
-                .Include(u => u.Role)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
                 .Include(u => u.Student)
                 .Include(u => u.Lecturer)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
 
         public Task<List<User>> GetUsersAsync() =>
             _context.Users
-                .Include(u => u.Role)
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
                 .Include(u => u.Student)
                 .Include(u => u.Lecturer)
                 .OrderByDescending(u => u.CreatedAt)
@@ -187,6 +191,8 @@ namespace AcademicAppoinment.Repositories
 
 
         public void AddUser(User user) => _context.Users.Add(user);
+
+        public void AddUserRole(UserRole userRole) => _context.UserRoles.Add(userRole);
 
         public void AddStudent(Student student) => _context.Students.Add(student);
 

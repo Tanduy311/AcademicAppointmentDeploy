@@ -38,9 +38,15 @@ if (app.Environment.IsDevelopment())
             FullName = "System Admin",
             EmailAddress = "admin@test.local",
             PhoneNumber = "0000000000",
-            RoleId = 1,
             IsActive = true,
-            CreatedAt = DateTime.Now
+            CreatedAt = DateTime.Now,
+            UserRoles =
+            [
+                new UserRole
+                {
+                    RoleId = 1
+                }
+            ]
         });
 
         context.SaveChanges();

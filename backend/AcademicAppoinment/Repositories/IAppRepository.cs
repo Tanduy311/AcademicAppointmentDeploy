@@ -41,6 +41,7 @@ namespace AcademicAppoinment.Repositories
 
 
         void AddUser(User user);
+        void AddUserRole(UserRole userRole);
         void AddStudent(Student student);
         void AddLecturer(Lecturer lecturer);
         void AddAppointment(Appointment appointment);

@@ -15,7 +15,7 @@ namespace AcademicAppoinment.Helpers
             _configuration = configuration;
         }
 
-        public string GenerateToken(User user, string roleName, int? studentId = null, int? lecturerId = null)
+        public string GenerateToken(User user, IEnumerable<string> roleNames, int? studentId = null, int? lecturerId = null)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JwtSecretKey missing");
@@ -27,9 +27,13 @@ namespace AcademicAppoinment.Helpers
             {
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, user.AccountName),
-                new Claim(ClaimTypes.Email, user.EmailAddress),
-                new Claim(ClaimTypes.Role, roleName)
+                new Claim(ClaimTypes.Email, user.EmailAddress)
             };
+
+            foreach (var roleName in roleNames.Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                claims.Add(new Claim(ClaimTypes.Role, roleName));
+            }
 
             if (studentId.HasValue)
             {
