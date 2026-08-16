@@ -110,14 +110,19 @@ Dieu nay giup dashboard va protected route hien tai tiep tuc hoat dong.
 
 ## Cap Nhat Admin Role Management
 
-Da bo sung kha nang quan ly role cho user o trang admin:
+Da tinh gon nghiep vu quan ly role cho user o trang admin:
 
 - Hien thi tat ca role hien co cua moi user.
-- Doi vai tro cua user bang endpoint `PUT /api/admin/users/{userId}/role`.
-- Them role moi cho user bang endpoint `POST /api/admin/users/{userId}/roles`.
-- Go role khoi user bang endpoint `DELETE /api/admin/users/{userId}/roles/{roleId}`.
-- Khong cho go role cuoi cung cua user.
-- Khong cho admin tu sua role cua chinh minh.
+- Frontend chi cho cap them quyen `Admin` cho user.
+- Frontend chi cho go quyen `Admin` neu user con role nghiep vu khac.
+- Khong hien UI doi truc tiep `Student` thanh `Lecturer` hoac nguoc lai.
+- Khong hien UI them role `Student`/`Lecturer` vi hai role nay can profile nghiep vu tuong ung.
+
+Ly do nghiep vu:
+
+- `Student` va `Lecturer` la role gan voi profile nghiep vu (`Students`, `Lecturers`).
+- `Admin` la quyen quan tri bo sung, khong can profile rieng.
+- Vi vay use case hop ly la `Lecturer + Admin` hoac `Student + Admin`, thay vi doi cheo `Student`/`Lecturer`.
 
 Frontend da cap nhat:
 

@@ -12,8 +12,6 @@ import {
 export function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUserListItemDto[]>([]);
   const [roles, setRoles] = useState<RoleDto[]>([]);
-  const [roleSelections, setRoleSelections] = useState<Record<number, number>>({});
-  const [addRoleSelections, setAddRoleSelections] = useState<Record<number, number>>({});
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -25,23 +23,6 @@ export function AdminUsersPage() {
       const [u, r] = await Promise.all([api.users(), api.roles()]);
       setUsers(u);
       setRoles(r);
-      setRoleSelections(
-        Object.fromEntries(
-          u.map((user) => {
-            const currentRole = r.find((role) => role.roleName === user.roleName);
-            return [user.userId, currentRole?.roleId ?? r[0]?.roleId ?? 0];
-          })
-        )
-      );
-      setAddRoleSelections(
-        Object.fromEntries(
-          u.map((user) => {
-            const userRoleNames = getUserRoleNames(user);
-            const firstAvailableRole = r.find((role) => !userRoleNames.includes(role.roleName));
-            return [user.userId, firstAvailableRole?.roleId ?? r[0]?.roleId ?? 0];
-          })
-        )
-      );
     } finally {
       setLoading(false);
     }
@@ -63,43 +44,37 @@ export function AdminUsersPage() {
     }
   };
 
-  const changeRole = async (userId: number) => {
-    const roleId = roleSelections[userId];
-    if (!roleId) return;
+  const addAdminRole = async (userId: number) => {
+    const adminRoleId = getAdminRoleId();
+    if (!adminRoleId) {
+      alert('Không tìm thấy role Admin trong hệ thống.');
+      return;
+    }
 
     setBusyId(userId);
     try {
-      await api.updateUserRole(userId, { roleId });
+      await api.addUserRole(userId, { roleId: adminRoleId });
       await load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Không thể cập nhật vai trò.');
+      alert(err instanceof Error ? err.message : 'Không thể thêm quyền Admin.');
     } finally {
       setBusyId(null);
     }
   };
 
-  const addRole = async (userId: number) => {
-    const roleId = addRoleSelections[userId];
-    if (!roleId) return;
-
-    setBusyId(userId);
-    try {
-      await api.addUserRole(userId, { roleId });
-      await load();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Không thể thêm vai trò.');
-    } finally {
-      setBusyId(null);
+  const removeAdminRole = async (userId: number) => {
+    const adminRoleId = getAdminRoleId();
+    if (!adminRoleId) {
+      alert('Không tìm thấy role Admin trong hệ thống.');
+      return;
     }
-  };
 
-  const removeRole = async (userId: number, roleId: number) => {
     setBusyId(userId);
     try {
-      await api.removeUserRole(userId, roleId);
+      await api.removeUserRole(userId, adminRoleId);
       await load();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Không thể gỡ vai trò.');
+      alert(err instanceof Error ? err.message : 'Không thể gỡ quyền Admin.');
     } finally {
       setBusyId(null);
     }
@@ -121,8 +96,12 @@ export function AdminUsersPage() {
     return Array.from(new Set(names.filter(Boolean)));
   }
 
-  function getRoleIdByName(roleName: string) {
-    return roles.find((role) => role.roleName === roleName)?.roleId;
+  function hasAdminRole(user: AdminUserListItemDto) {
+    return getUserRoleNames(user).includes('Admin');
+  }
+
+  function getAdminRoleId() {
+    return roles.find((role) => role.roleName === 'Admin')?.roleId;
   }
 
   if (loading) {
@@ -144,7 +123,7 @@ export function AdminUsersPage() {
               <span>Quản lý người dùng hệ thống</span>
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-              Xem danh sách tài khoản, quản lý vai trò và trạng thái hoạt động.
+              Xem danh sách tài khoản, cấp quyền Admin bổ sung và quản lý trạng thái hoạt động.
             </p>
           </div>
 
@@ -243,91 +222,34 @@ export function AdminUsersPage() {
                 borderBottomRightRadius: 'var(--radius-lg)',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: 1, minWidth: 320 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: 1, minWidth: 280 }}>
                 <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                  Đổi vai trò:
+                  Quyền quản trị:
                 </span>
-                <select
-                  style={{ width: 'auto', minWidth: 150, padding: '6px 34px 6px 12px', fontSize: '0.85rem' }}
-                  value={roleSelections[user.userId] ?? ''}
-                  onChange={(e) =>
-                    setRoleSelections((prev) => ({
-                      ...prev,
-                      [user.userId]: Number(e.target.value),
-                    }))
-                  }
-                >
-                  {roles.map((role) => (
-                    <option key={role.roleId} value={role.roleId}>
-                      {role.roleName}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  className="btn btn-secondary"
-                  type="button"
-                  style={{ fontSize: '0.82rem', padding: '6px 14px' }}
-                  onClick={() => changeRole(user.userId)}
-                  disabled={busyId === user.userId}
-                >
-                  Lưu
-                </button>
-
-                <span style={{ width: 1, height: 24, background: 'var(--border-strong)', margin: '0 4px' }} />
-
-                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-                  Thêm:
-                </span>
-                <select
-                  style={{ width: 'auto', minWidth: 150, padding: '6px 34px 6px 12px', fontSize: '0.85rem' }}
-                  value={addRoleSelections[user.userId] ?? ''}
-                  onChange={(e) =>
-                    setAddRoleSelections((prev) => ({
-                      ...prev,
-                      [user.userId]: Number(e.target.value),
-                    }))
-                  }
-                >
-                  {roles.map((role) => {
-                    const alreadyHasRole = getUserRoleNames(user).includes(role.roleName);
-                    return (
-                      <option key={role.roleId} value={role.roleId} disabled={alreadyHasRole}>
-                        {alreadyHasRole ? `${role.roleName} (đã có)` : role.roleName}
-                      </option>
-                    );
-                  })}
-                </select>
-                <button
-                  className="btn btn-secondary"
-                  type="button"
-                  style={{ fontSize: '0.82rem', padding: '6px 14px' }}
-                  onClick={() => addRole(user.userId)}
-                  disabled={
-                    busyId === user.userId ||
-                    getUserRoleNames(user).some((roleName) => getRoleIdByName(roleName) === addRoleSelections[user.userId])
-                  }
-                >
-                  Thêm role
-                </button>
-
-                {getUserRoleNames(user).map((roleName) => {
-                  const roleId = getRoleIdByName(roleName);
-                  const canRemove = Boolean(roleId) && getUserRoleNames(user).length > 1;
-                  return (
-                    <button
-                      key={`remove-${roleName}`}
-                      className="btn btn-secondary"
-                      type="button"
-                      style={{ fontSize: '0.78rem', padding: '5px 10px', display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                      onClick={() => roleId && removeRole(user.userId, roleId)}
-                      disabled={busyId === user.userId || !canRemove}
-                      title={canRemove ? `Gỡ role ${roleName}` : 'Người dùng phải có ít nhất một role'}
-                    >
-                      <IconClose size={13} />
-                      <span>{roleName}</span>
-                    </button>
-                  );
-                })}
+                {hasAdminRole(user) ? (
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                    onClick={() => removeAdminRole(user.userId)}
+                    disabled={busyId === user.userId || getUserRoleNames(user).length <= 1}
+                    title={getUserRoleNames(user).length <= 1 ? 'Không thể gỡ role cuối cùng của tài khoản' : 'Gỡ quyền Admin'}
+                  >
+                    <IconClose size={15} />
+                    <span>Gỡ quyền Admin</span>
+                  </button>
+                ) : (
+                  <button
+                    className="btn btn-secondary"
+                    type="button"
+                    style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                    onClick={() => addAdminRole(user.userId)}
+                    disabled={busyId === user.userId}
+                  >
+                    <IconShield size={15} />
+                    <span>Thêm quyền Admin</span>
+                  </button>
+                )}
               </div>
 
               <button
