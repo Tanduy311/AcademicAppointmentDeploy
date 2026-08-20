@@ -36,5 +36,12 @@ namespace AcademicAppoinment.Controllers
             await _notificationService.MarkAsReadAsync(id, User);
             return Ok(new { message = "Đã đánh dấu thông báo là đã đọc." });
         }
+
+        [HttpPut("mark-all-read")]
+        public async Task<IActionResult> MarkAllAsRead()
+        {
+            await _notificationService.MarkAllAsReadAsync(User);
+            return Ok(new { message = "Đã đánh dấu tất cả thông báo là đã đọc." });
+        }
     }
 }

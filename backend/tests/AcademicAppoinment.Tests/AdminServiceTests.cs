@@ -18,10 +18,38 @@ namespace AcademicAppoinment.Tests
             SeedRoles(context);
             SeedAdminUser(context);
 
-            var service = new AdminService(new AppRepository(context));
+            var service = new AdminService(new AppRepository(context), context);
             var principal = TestDbFactory.CreatePrincipal(new Claim(ClaimTypes.NameIdentifier, "1"));
 
             await Assert.ThrowsExceptionAsync<ForbiddenAccessException>(() =>
+                service.SetUserActiveAsync(1, false, principal));
+        }
+
+        [TestMethod]
+        public async Task SetUserActiveAsync_Throws_WhenDeactivatingOnlyActiveAdmin()
+        {
+            using var context = TestDbFactory.CreateContext(nameof(SetUserActiveAsync_Throws_WhenDeactivatingOnlyActiveAdmin));
+            SeedRoles(context);
+            SeedAdminUser(context);
+            // Admin user 2 is the one performing the action, targeting Admin user 1
+            context.Users.Add(new User
+            {
+                UserId = 3,
+                AccountName = "admin_caller",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
+                FullName = "Admin Caller",
+                EmailAddress = "caller@test.local",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UserRoles = [new UserRole { RoleId = 2 }] // not an admin
+            });
+            context.SaveChanges();
+
+            var service = new AdminService(new AppRepository(context), context);
+            var principal = TestDbFactory.CreatePrincipal(new Claim(ClaimTypes.NameIdentifier, "3"));
+
+            // User 1 is the only admin
+            await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
                 service.SetUserActiveAsync(1, false, principal));
         }
 
@@ -44,7 +72,7 @@ namespace AcademicAppoinment.Tests
             });
             context.SaveChanges();
 
-            var service = new AdminService(new AppRepository(context));
+            var service = new AdminService(new AppRepository(context), context);
             var principal = TestDbFactory.CreatePrincipal(new Claim(ClaimTypes.NameIdentifier, "1"));
 
             await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
@@ -59,7 +87,7 @@ namespace AcademicAppoinment.Tests
             SeedAdminUser(context);
             SeedStudentUser(context);
 
-            var service = new AdminService(new AppRepository(context));
+            var service = new AdminService(new AppRepository(context), context);
             var principal = TestDbFactory.CreatePrincipal(new Claim(ClaimTypes.NameIdentifier, "1"));
 
             await service.AddUserRoleAsync(2, 1, principal);
@@ -74,11 +102,23 @@ namespace AcademicAppoinment.Tests
             using var context = TestDbFactory.CreateContext(nameof(RemoveUserRoleAsync_RemovesRole_WhenUserHasMultipleRoles));
             SeedRoles(context);
             SeedAdminUser(context);
+            // Add another admin so user 1 is not the only admin if role 1 removed
+            context.Users.Add(new User
+            {
+                UserId = 3,
+                AccountName = "second_admin",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Admin@123"),
+                FullName = "Second Admin",
+                EmailAddress = "admin2@test.local",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UserRoles = [new UserRole { RoleId = 1 }]
+            });
             SeedStudentUser(context);
             context.UserRoles.Add(new UserRole { UserId = 2, RoleId = 1 });
             context.SaveChanges();
 
-            var service = new AdminService(new AppRepository(context));
+            var service = new AdminService(new AppRepository(context), context);
             var principal = TestDbFactory.CreatePrincipal(new Claim(ClaimTypes.NameIdentifier, "1"));
 
             await service.RemoveUserRoleAsync(2, 1, principal);

@@ -46,6 +46,7 @@ export function getStatusTone(status: string) {
   if (['approved', 'confirmed', 'completed'].includes(normalized)) return 'success';
   if (['pending', 'waiting'].includes(normalized)) return 'warning';
   if (['rejected', 'cancelled', 'canceled'].includes(normalized)) return 'danger';
+  if (['no-show', 'noshow'].includes(normalized)) return 'neutral';
   return 'neutral';
 }
 
@@ -57,6 +58,7 @@ export function formatStatusLabel(status: string): string {
   if (['rejected'].includes(norm)) return 'Từ chối';
   if (['cancelled', 'canceled'].includes(norm)) return 'Đã hủy';
   if (['completed'].includes(norm)) return 'Hoàn thành';
+  if (['no-show', 'noshow'].includes(norm)) return 'Vắng mặt';
   return titleCase(status);
 }
 

@@ -11,7 +11,6 @@ import {
   IconCalendar,
   IconMapPin,
   IconChat,
-  IconClose,
   IconFileText,
   IconAlert,
   IconCheck,
@@ -60,7 +59,7 @@ export function StudentAppointmentsPage() {
       setAvailableSlots(
         lecturerDetails
           .filter((result) => result.status === 'fulfilled')
-          .flatMap((result) => result.value.upcomingSlots)
+          .flatMap((result) => (result as PromiseFulfilledResult<any>).value.upcomingSlots)
           .filter((slot) => slot.isAvailable)
       );
     } finally {
@@ -72,7 +71,7 @@ export function StudentAppointmentsPage() {
     load();
   }, []);
 
-  const canCancel = (status: string) => ['Pending', 'Confirmed'].includes(status);
+  const canCancel = (status: string) => ['Pending', 'Confirmed', 'Approved'].includes(status);
 
   // Categorize appointments into Current vs History
   const currentItems = items.filter((item) => {
@@ -82,7 +81,7 @@ export function StudentAppointmentsPage() {
 
   const historyItems = items.filter((item) => {
     const isPast = new Date(item.endTime).getTime() < Date.now();
-    return item.status === 'Cancelled' || item.status === 'Rejected' || isPast;
+    return item.status === 'Cancelled' || item.status === 'Rejected' || item.status === 'Completed' || item.status === 'No-Show' || isPast;
   });
 
   const displayItems = activeTab === 'current' ? currentItems : activeTab === 'history' ? historyItems : [];
@@ -276,6 +275,8 @@ export function StudentAppointmentsPage() {
                 <option value="Pending">Chờ duyệt</option>
                 <option value="Confirmed">Đã duyệt</option>
                 <option value="Approved">Đã phê duyệt</option>
+                <option value="Completed">Hoàn thành</option>
+                <option value="No-Show">Vắng mặt</option>
                 <option value="Cancelled">Đã hủy</option>
                 <option value="Rejected">Từ chối</option>
               </select>
@@ -294,111 +295,111 @@ export function StudentAppointmentsPage() {
       ) : (
         <div className="panel" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <div style={{ display: 'inline-flex', background: '#f1f5f9', padding: 4, borderRadius: 'var(--radius-md)', gap: 4 }}>
-          <button
-            type="button"
-            className="btn"
-            style={{
-              fontSize: '0.88rem',
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-sm)',
-              border: 'none',
-              background: activeTab === 'current' ? '#fff' : 'transparent',
-              color: activeTab === 'current' ? 'var(--accent)' : 'var(--text-secondary)',
-              fontWeight: activeTab === 'current' ? 700 : 500,
-              boxShadow: activeTab === 'current' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              transition: 'all 0.15s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-            onClick={() => setActiveTab('current')}
-          >
-            <IconCalendar size={16} style={{ color: activeTab === 'current' ? 'var(--accent)' : 'var(--text-muted)' }} />
-            <span>Cuộc hẹn hiện tại</span>
-            <span
+            <button
+              type="button"
+              className="btn"
               style={{
-                background: activeTab === 'current' ? 'var(--accent)' : '#cbd5e1',
-                color: '#fff',
-                borderRadius: 12,
-                padding: '2px 8px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
+                fontSize: '0.88rem',
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                background: activeTab === 'current' ? '#fff' : 'transparent',
+                color: activeTab === 'current' ? 'var(--accent)' : 'var(--text-secondary)',
+                fontWeight: activeTab === 'current' ? 700 : 500,
+                boxShadow: activeTab === 'current' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
               }}
+              onClick={() => setActiveTab('current')}
             >
-              {currentItems.length}
-            </span>
-          </button>
+              <IconCalendar size={16} style={{ color: activeTab === 'current' ? 'var(--accent)' : 'var(--text-muted)' }} />
+              <span>Cuộc hẹn hiện tại</span>
+              <span
+                style={{
+                  background: activeTab === 'current' ? 'var(--accent)' : '#cbd5e1',
+                  color: '#fff',
+                  borderRadius: 12,
+                  padding: '2px 8px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                }}
+              >
+                {currentItems.length}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            className="btn"
-            style={{
-              fontSize: '0.88rem',
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-sm)',
-              border: 'none',
-              background: activeTab === 'history' ? '#fff' : 'transparent',
-              color: activeTab === 'history' ? 'var(--text-primary)' : 'var(--text-secondary)',
-              fontWeight: activeTab === 'history' ? 700 : 500,
-              boxShadow: activeTab === 'history' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              transition: 'all 0.15s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-            onClick={() => setActiveTab('history')}
-          >
-            <IconHistory size={16} style={{ color: activeTab === 'history' ? 'var(--text-primary)' : 'var(--text-muted)' }} />
-            <span>Lịch sử cuộc hẹn</span>
-            <span
+            <button
+              type="button"
+              className="btn"
               style={{
-                background: activeTab === 'history' ? '#64748b' : '#cbd5e1',
-                color: '#fff',
-                borderRadius: 12,
-                padding: '2px 8px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
+                fontSize: '0.88rem',
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                background: activeTab === 'history' ? '#fff' : 'transparent',
+                color: activeTab === 'history' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                fontWeight: activeTab === 'history' ? 700 : 500,
+                boxShadow: activeTab === 'history' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
               }}
+              onClick={() => setActiveTab('history')}
             >
-              {historyItems.length}
-            </span>
-          </button>
+              <IconHistory size={16} style={{ color: activeTab === 'history' ? 'var(--text-primary)' : 'var(--text-muted)' }} />
+              <span>Lịch sử cuộc hẹn</span>
+              <span
+                style={{
+                  background: activeTab === 'history' ? '#64748b' : '#cbd5e1',
+                  color: '#fff',
+                  borderRadius: 12,
+                  padding: '2px 8px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                }}
+              >
+                {historyItems.length}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            className="btn"
-            style={{
-              fontSize: '0.88rem',
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-sm)',
-              border: 'none',
-              background: activeTab === 'available' ? '#fff' : 'transparent',
-              color: activeTab === 'available' ? 'var(--success)' : 'var(--text-secondary)',
-              fontWeight: activeTab === 'available' ? 700 : 500,
-              boxShadow: activeTab === 'available' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              transition: 'all 0.15s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-            }}
-            onClick={() => setActiveTab('available')}
-          >
-            <IconCalendar size={16} style={{ color: activeTab === 'available' ? 'var(--success)' : 'var(--text-muted)' }} />
-            <span>Lịch trống</span>
-            <span
+            <button
+              type="button"
+              className="btn"
               style={{
-                background: activeTab === 'available' ? 'var(--success)' : '#cbd5e1',
-                color: '#fff',
-                borderRadius: 12,
-                padding: '2px 8px',
-                fontSize: '0.75rem',
-                fontWeight: 700,
+                fontSize: '0.88rem',
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-sm)',
+                border: 'none',
+                background: activeTab === 'available' ? '#fff' : 'transparent',
+                color: activeTab === 'available' ? 'var(--success)' : 'var(--text-secondary)',
+                fontWeight: activeTab === 'available' ? 700 : 500,
+                boxShadow: activeTab === 'available' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.15s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
               }}
+              onClick={() => setActiveTab('available')}
             >
-              {availableSlots.length}
-            </span>
-          </button>
-        </div>
+              <IconCalendar size={16} style={{ color: activeTab === 'available' ? 'var(--success)' : 'var(--text-muted)' }} />
+              <span>Lịch trống</span>
+              <span
+                style={{
+                  background: activeTab === 'available' ? 'var(--success)' : '#cbd5e1',
+                  color: '#fff',
+                  borderRadius: 12,
+                  padding: '2px 8px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                }}
+              >
+                {availableSlots.length}
+              </span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -413,95 +414,115 @@ export function StudentAppointmentsPage() {
         />
       ) : null}
 
-      {viewMode === 'list' && activeTab !== 'available' ? <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {displayItems.map((item) => (
-          <div key={item.appointmentId} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-              <div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <IconBookmark size={18} style={{ color: 'var(--accent)' }} />
-                  <span>{item.topic}</span>
-                </h3>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                  <IconTeacher size={16} />
-                  <span>Giảng viên: <strong>{item.lecturerName}</strong> ({item.department || 'Khoa CNTT'})</span>
+      {viewMode === 'list' && activeTab !== 'available' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {displayItems.map((item) => (
+            <div key={item.appointmentId} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
+                <div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <IconBookmark size={18} style={{ color: 'var(--accent)' }} />
+                    <span>{item.topic}</span>
+                  </h3>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                    <IconTeacher size={16} />
+                    <span>Giảng viên: <strong>{item.lecturerName}</strong> ({item.department || 'Khoa CNTT'})</span>
+                  </div>
+                </div>
+
+                <StatusBadge value={item.status} />
+              </div>
+
+              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', background: '#f8fafc', padding: 12, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: '0.85rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <IconCalendar size={16} style={{ color: 'var(--text-muted)' }} />
+                  <span><strong>Thời gian tư vấn:</strong> {formatDateTime(item.startTime)} - {formatDateTime(item.endTime)}</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <IconMapPin size={16} style={{ color: 'var(--text-muted)' }} />
+                  <span><strong>Hình thức:</strong> <span className="badge badge-neutral">{item.meetingType}</span> {item.locationOrLink ? `(${item.locationOrLink})` : ''}</span>
                 </div>
               </div>
 
-              <StatusBadge value={item.status} />
-            </div>
+              {item.description ? (
+                <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                  <IconChat size={16} style={{ marginTop: 2, flexShrink: 0 }} />
+                  <span><strong>Ghi chú:</strong> {item.description}</span>
+                </div>
+              ) : null}
 
-            <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', background: '#f8fafc', padding: 12, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', fontSize: '0.85rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <IconCalendar size={16} style={{ color: 'var(--text-muted)' }} />
-                <span><strong>Thời gian tư vấn:</strong> {formatDateTime(item.startTime)} - {formatDateTime(item.endTime)}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <IconMapPin size={16} style={{ color: 'var(--text-muted)' }} />
-                <span><strong>Hình thức:</strong> <span className="badge badge-neutral">{item.meetingType}</span> {item.locationOrLink ? `(${item.locationOrLink})` : ''}</span>
-              </div>
-            </div>
+              {item.attachmentUrl ? (
+                <div style={{ background: '#f8fafc', padding: 10, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <IconFileText size={16} style={{ color: 'var(--accent)' }} />
+                    <span><strong>Tài liệu đính kèm:</strong> {item.attachmentName || 'Tệp đính kèm'}</span>
+                  </div>
+                  <a
+                    href={item.attachmentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.75rem', padding: '3px 8px' }}
+                  >
+                    Tải / Xem file
+                  </a>
+                </div>
+              ) : null}
 
-            {item.description ? (
-              <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                <IconChat size={16} style={{ marginTop: 2, flexShrink: 0 }} />
-                <span><strong>Ghi chú:</strong> {item.description}</span>
-              </div>
-            ) : null}
+              {item.lecturerResponse ? (
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: 10, borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: '#1d4ed8' }}>
+                  <strong>Lời nhắn từ giảng viên:</strong> {item.lecturerResponse}
+                </div>
+              ) : null}
 
-            {item.lecturerResponse ? (
-              <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: 10, borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: '#1d4ed8' }}>
-                <strong>Lời nhắn từ giảng viên:</strong> {item.lecturerResponse}
-              </div>
-            ) : null}
+              {item.cancellationReason ? (
+                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: 10, borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: '#dc2626' }}>
+                  <strong>Lý do đã hủy lịch:</strong> {item.cancellationReason}
+                </div>
+              ) : null}
 
-            {item.cancellationReason ? (
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: 10, borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: '#dc2626' }}>
-                <strong>Lý do đã hủy lịch:</strong> {item.cancellationReason}
-              </div>
-            ) : null}
+              <div style={{ paddingTop: 10, borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {canCancel(item.status) && activeTab === 'current' ? (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ color: '#dc2626', fontSize: '0.82rem' }}
+                    onClick={() => openCancelModal(item)}
+                  >
+                    Hủy lịch hẹn
+                  </button>
+                ) : <div />}
 
-            <div style={{ paddingTop: 10, borderTop: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              {canCancel(item.status) && activeTab === 'current' ? (
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  style={{ color: '#dc2626', fontSize: '0.82rem' }}
-                  onClick={() => openCancelModal(item)}
+                  style={{ fontSize: '0.82rem' }}
+                  onClick={() => openViewModal(item)}
+                  disabled={detailLoadingId === item.appointmentId}
                 >
-                  Hủy lịch hẹn
+                  <span>{detailLoadingId === item.appointmentId ? 'Đang tải...' : 'Xem chi tiết'}</span>
                 </button>
-              ) : <div />}
-
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{ fontSize: '0.82rem' }}
-                onClick={() => openViewModal(item)}
-                disabled={detailLoadingId === item.appointmentId}
-              >
-                <span>{detailLoadingId === item.appointmentId ? 'Đang tải...' : 'Xem chi tiết'}</span>
-              </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
 
-        {displayItems.length === 0 && (
-          <div className="panel" style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
-            {activeTab === 'current' ? (
-              <div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Bạn chưa có lịch hẹn tư vấn nào sắp tới</div>
-                <div style={{ fontSize: '0.85rem' }}>Hãy chọn danh sách giảng viên để tìm slot phù hợp và đăng ký.</div>
-              </div>
-            ) : (
-              <div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Chưa có lịch sử cuộc hẹn cũ</div>
-                <div style={{ fontSize: '0.85rem' }}>Các buổi tư vấn đã kết thúc hoặc bị hủy sẽ xuất hiện tại đây.</div>
-              </div>
-            )}
-          </div>
-        )}
-      </div> : null}
+          {displayItems.length === 0 && (
+            <div className="panel" style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
+              {activeTab === 'current' ? (
+                <div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Bạn chưa có lịch hẹn tư vấn nào sắp tới</div>
+                  <div style={{ fontSize: '0.85rem' }}>Hãy chọn danh sách giảng viên để tìm slot phù hợp và đăng ký.</div>
+                </div>
+              ) : (
+                <div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 4 }}>Chưa có lịch sử cuộc hẹn cũ</div>
+                  <div style={{ fontSize: '0.85rem' }}>Các buổi tư vấn đã kết thúc hoặc bị hủy sẽ xuất hiện tại đây.</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : null}
 
       {viewMode === 'list' && activeTab === 'available' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -582,6 +603,25 @@ export function StudentAppointmentsPage() {
                     <span>Ghi chú yêu cầu của sinh viên</span>
                   </div>
                   <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>{activeModal.item.description}</div>
+                </div>
+              )}
+
+              {/* Attachment */}
+              {activeModal.item.attachmentUrl && (
+                <div style={{ background: '#f8fafc', padding: 12, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.88rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <IconFileText size={16} style={{ color: 'var(--accent)' }} />
+                    <span style={{ fontWeight: 600 }}>Tài liệu đính kèm: {activeModal.item.attachmentName || 'Tài liệu'}</span>
+                  </div>
+                  <a
+                    href={activeModal.item.attachmentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-secondary"
+                    style={{ fontSize: '0.78rem', padding: '4px 10px' }}
+                  >
+                    Xem / Tải file
+                  </a>
                 </div>
               )}
 

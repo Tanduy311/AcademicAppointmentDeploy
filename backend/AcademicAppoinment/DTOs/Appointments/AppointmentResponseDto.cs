@@ -24,6 +24,8 @@ namespace AcademicAppoinment.DTOs.Appointments
         public string Status { get; set; } = null!;
         public string? LecturerResponse { get; set; }
         public string? CancellationReason { get; set; }
+        public string? AttachmentUrl { get; set; }
+        public string? AttachmentName { get; set; }
 
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

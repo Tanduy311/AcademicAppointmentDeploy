@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import type { LecturerDetailDto } from '../types/api';
 import { useAuth } from '../context/AuthContext';
 import { cleanStringValue, formatDisplayValue } from '../utils/format';
+import { ChangePasswordCard } from '../components/ChangePasswordCard';
 
 export function LecturerProfilePage() {
   const { user, refreshMe } = useAuth();
@@ -342,6 +343,8 @@ export function LecturerProfilePage() {
           </div>
         </div>
       </div>
+
+      <ChangePasswordCard />
     </div>
   );
 }

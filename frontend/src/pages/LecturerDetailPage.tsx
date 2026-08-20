@@ -25,6 +25,7 @@ export function LecturerDetailPage() {
   const [topic, setTopic] = useState('Tư vấn đồ án học kỳ 2');
   const [description, setDescription] = useState('Em muốn xin thầy tư vấn định hướng đề tài và thuật toán.');
   const [selectedSlotId, setSelectedSlotId] = useState<number | null>(null);
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -54,10 +55,21 @@ export function LecturerDetailPage() {
     setError('');
     setSuccessMsg('');
     try {
+      let attachmentUrl: string | undefined = undefined;
+      let attachmentName: string | undefined = undefined;
+
+      if (attachmentFile) {
+        const uploadRes = await api.uploadFile(attachmentFile, 'appointments');
+        attachmentUrl = uploadRes.fileUrl;
+        attachmentName = uploadRes.fileName;
+      }
+
       await api.createAppointment({
         availabilitySlotId: selectedSlotId,
         topic,
         description,
+        attachmentUrl,
+        attachmentName,
       });
       setSuccessMsg('Đặt lịch hẹn thành công! Đã gửi yêu cầu đến Giảng viên.');
       await api.lecturerById(Number(lecturerId)).then(setData);
@@ -222,6 +234,20 @@ export function LecturerDetailPage() {
               rows={4}
               placeholder="Mô tả thắc mắc hoặc thông tin cần tư vấn..."
             />
+          </label>
+
+          <label className="field">
+            <span>Tài liệu đính kèm (Bản thảo đề tài, PDF, Word, v.v.)</span>
+            <input
+              type="file"
+              onChange={(e) => setAttachmentFile(e.target.files?.[0] || null)}
+              accept=".pdf,.doc,.docx,.zip,.png,.jpg,.jpeg"
+            />
+            {attachmentFile && (
+              <span style={{ fontSize: '0.8rem', color: 'var(--accent)' }}>
+                Đã chọn: {attachmentFile.name} ({(attachmentFile.size / 1024).toFixed(1)} KB)
+              </span>
+            )}
           </label>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>

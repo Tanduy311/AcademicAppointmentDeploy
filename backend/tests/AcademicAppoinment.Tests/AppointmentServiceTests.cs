@@ -57,6 +57,93 @@ namespace AcademicAppoinment.Tests
         }
 
         [TestMethod]
+        public async Task CreateAppointmentAsync_Throws_WhenBookingLessThan2HoursInAdvance()
+        {
+            using var context = TestDbFactory.CreateContext(nameof(CreateAppointmentAsync_Throws_WhenBookingLessThan2HoursInAdvance));
+            SeedRoles(context);
+            SeedAppointmentGraph(context);
+
+            // Create a slot starting in 1 hour (less than 2 hours)
+            var slot = new AvailabilitySlot
+            {
+                AvailabilitySlotId = 5,
+                LecturerId = 3,
+                StartTime = DateTime.Now.AddHours(1),
+                EndTime = DateTime.Now.AddHours(1).AddMinutes(30),
+                MeetingType = "Online",
+                IsAvailable = true,
+                CreatedAt = DateTime.UtcNow
+            };
+            context.AvailabilitySlots.Add(slot);
+            context.SaveChanges();
+
+            var service = new AppointmentService(context, new AppRepository(context));
+            var principal = TestDbFactory.CreatePrincipal(new Claim("StudentId", "2"));
+
+            await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+                service.CreateAppointmentAsync(new CreateAppointmentDto
+                {
+                    AvailabilitySlotId = 5,
+                    Topic = "Urgent consultation"
+                }, principal));
+        }
+
+        [TestMethod]
+        public async Task CreateAppointmentAsync_Throws_WhenStudentHas3PendingAppointments()
+        {
+            using var context = TestDbFactory.CreateContext(nameof(CreateAppointmentAsync_Throws_WhenStudentHas3PendingAppointments));
+            SeedRoles(context);
+            SeedAppointmentGraph(context);
+
+            // Add 2 more pending appointments for student 2 (total 3 pending)
+            context.Appointments.AddRange(
+                new Appointment
+                {
+                    AppointmentId = 2,
+                    StudentId = 2,
+                    LecturerId = 3,
+                    AvailabilitySlotId = 4,
+                    Topic = "Pending 2",
+                    Status = "Pending",
+                    CreatedAt = DateTime.UtcNow
+                },
+                new Appointment
+                {
+                    AppointmentId = 3,
+                    StudentId = 2,
+                    LecturerId = 3,
+                    AvailabilitySlotId = 4,
+                    Topic = "Pending 3",
+                    Status = "Pending",
+                    CreatedAt = DateTime.UtcNow
+                }
+            );
+
+            // Slot 5 is in future
+            context.AvailabilitySlots.Add(new AvailabilitySlot
+            {
+                AvailabilitySlotId = 5,
+                LecturerId = 3,
+                StartTime = DateTime.Now.AddDays(2),
+                EndTime = DateTime.Now.AddDays(2).AddMinutes(45),
+                MeetingType = "Online",
+                IsAvailable = true,
+                CreatedAt = DateTime.UtcNow
+            });
+            context.SaveChanges();
+
+            var service = new AppointmentService(context, new AppRepository(context));
+            var principal = TestDbFactory.CreatePrincipal(new Claim("StudentId", "2"));
+
+            await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+                service.CreateAppointmentAsync(new CreateAppointmentDto
+                {
+                    AvailabilitySlotId = 5,
+                    Topic = "Pending 4 (over quota)"
+                }, principal));
+        }
+
+        [TestMethod]
         public async Task DeleteSlotAsync_SoftDeletesSlot_AndKeepsHistory()
         {
             using var context = TestDbFactory.CreateContext(nameof(DeleteSlotAsync_SoftDeletesSlot_AndKeepsHistory));
@@ -90,23 +177,58 @@ namespace AcademicAppoinment.Tests
         }
 
         [TestMethod]
-        public async Task CreateSlotAsync_Throws_WhenMeetingTypeIsInvalid()
+        public async Task CreateSlotAsync_Throws_WhenDurationLessThan15OrGreaterThan180Minutes()
         {
-            using var context = TestDbFactory.CreateContext(nameof(CreateSlotAsync_Throws_WhenMeetingTypeIsInvalid));
+            using var context = TestDbFactory.CreateContext(nameof(CreateSlotAsync_Throws_WhenDurationLessThan15OrGreaterThan180Minutes));
             SeedRoles(context);
             SeedLecturerOnly(context);
 
             var service = new AvailabilitySlotService(context, new AppRepository(context));
             var principal = TestDbFactory.CreatePrincipal(new Claim("LecturerId", "3"));
 
+            // Duration 5 minutes (< 15m)
+            var baseTime = DateTime.Now.AddDays(1).Date.AddHours(9);
             await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
                 service.CreateSlotAsync(new CreateSlotDto
                 {
-                    StartTime = DateTime.Now.AddDays(1),
-                    EndTime = DateTime.Now.AddDays(1).AddHours(1),
-                    MeetingType = "Phone",
-                    LocationOrLink = "Room A"
+                    StartTime = baseTime,
+                    EndTime = baseTime.AddMinutes(5),
+                    MeetingType = "Online",
+                    LocationOrLink = "Google Meet"
                 }, principal));
+
+            // Duration 200 minutes (> 180m)
+            await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+                service.CreateSlotAsync(new CreateSlotDto
+                {
+                    StartTime = baseTime,
+                    EndTime = baseTime.AddMinutes(200),
+                    MeetingType = "Online",
+                    LocationOrLink = "Google Meet"
+                }, principal));
+        }
+
+        [TestMethod]
+        public async Task UpdateSlotAsync_UpdatesLocation_AndNotifiesStudent()
+        {
+            using var context = TestDbFactory.CreateContext(nameof(UpdateSlotAsync_UpdatesLocation_AndNotifiesStudent));
+            SeedRoles(context);
+            SeedAppointmentGraph(context, "Confirmed");
+
+            var service = new AvailabilitySlotService(context, new AppRepository(context));
+            var principal = TestDbFactory.CreatePrincipal(new Claim("LecturerId", "3"));
+
+            var result = await service.UpdateSlotAsync(4, new UpdateSlotDto
+            {
+                MeetingType = "Offline",
+                LocationOrLink = "Room B204"
+            }, principal);
+
+            Assert.AreEqual("Offline", result.MeetingType);
+            Assert.AreEqual("Room B204", result.LocationOrLink);
+
+            var notification = await context.Notifications.FirstOrDefaultAsync(n => n.UserId == 2 && n.Title.Contains("Cập nhật"));
+            Assert.IsNotNull(notification);
         }
 
         private static void SeedRoles(AppDbContext context)
@@ -166,9 +288,10 @@ namespace AcademicAppoinment.Tests
             {
                 AvailabilitySlotId = 4,
                 LecturerId = 3,
-                StartTime = DateTime.UtcNow.AddDays(1),
-                EndTime = DateTime.UtcNow.AddDays(1).AddHours(1),
+                StartTime = DateTime.Now.AddDays(1).Date.AddHours(14),
+                EndTime = DateTime.Now.AddDays(1).Date.AddHours(15),
                 MeetingType = "Online",
+                LocationOrLink = "Google Meet",
                 IsAvailable = false,
                 CreatedAt = DateTime.UtcNow
             };

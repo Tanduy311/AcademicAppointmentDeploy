@@ -51,9 +51,30 @@ namespace AcademicAppoinment.Services
                 throw new ArgumentException("Khung giờ này đã được người khác đặt lịch. Vui lòng chọn khung giờ khác.");
             }
 
-            if (slot.StartTime <= DateTime.Now)
+            if (slot.StartTime < DateTime.Now.AddHours(2))
             {
-                throw new ArgumentException("Không thể đặt lịch cho khung giờ đã qua.");
+                throw new ArgumentException("Chỉ có thể đặt lịch trước giờ bắt đầu tối thiểu 2 tiếng.");
+            }
+
+            var pendingCount = await _context.Appointments
+                .CountAsync(a => a.StudentId == student.StudentId && a.Status == "Pending");
+            if (pendingCount >= 3)
+            {
+                throw new ArgumentException("Bạn đang có 3 lịch hẹn ở trạng thái chờ duyệt. Vui lòng chờ phản hồi trước khi đặt thêm.");
+            }
+
+            var hasStudentOverlap = await _context.Appointments
+                .Include(a => a.AvailabilitySlot)
+                .AnyAsync(a => a.StudentId == student.StudentId &&
+                               (a.Status == "Pending" || a.Status == "Confirmed") &&
+                               a.AvailabilitySlot != null &&
+                               !a.AvailabilitySlot.IsDeleted &&
+                               ((slot.StartTime >= a.AvailabilitySlot.StartTime && slot.StartTime < a.AvailabilitySlot.EndTime) ||
+                                (slot.EndTime > a.AvailabilitySlot.StartTime && slot.EndTime <= a.AvailabilitySlot.EndTime) ||
+                                (slot.StartTime <= a.AvailabilitySlot.StartTime && slot.EndTime >= a.AvailabilitySlot.EndTime)));
+            if (hasStudentOverlap)
+            {
+                throw new ArgumentException("Bạn đã có một lịch hẹn khác trong cùng khung giờ này.");
             }
 
             var appointment = new Appointment
@@ -63,6 +84,8 @@ namespace AcademicAppoinment.Services
                 AvailabilitySlotId = slot.AvailabilitySlotId,
                 Topic = dto.Topic,
                 Description = dto.Description,
+                AttachmentUrl = dto.AttachmentUrl,
+                AttachmentName = dto.AttachmentName,
                 Status = "Pending",
                 CreatedAt = DateTime.Now
             };
@@ -172,9 +195,27 @@ namespace AcademicAppoinment.Services
             }
 
             var normalizedStatus = NormalizeAppointmentStatus(dto.Status);
-            if (normalizedStatus != "Confirmed" && normalizedStatus != "Rejected" && normalizedStatus != "Cancelled")
+            if (normalizedStatus != "Confirmed" &&
+                normalizedStatus != "Rejected" &&
+                normalizedStatus != "Cancelled" &&
+                normalizedStatus != "Completed" &&
+                normalizedStatus != "No-Show")
             {
-                throw new ArgumentException("Status chỉ được là Confirmed, Rejected hoặc Cancelled.");
+                throw new ArgumentException("Status chỉ được là Confirmed, Rejected, Cancelled, Completed hoặc No-Show.");
+            }
+
+            if (normalizedStatus == "Completed" || normalizedStatus == "No-Show")
+            {
+                if (!string.Equals(appointment.Status, "Confirmed", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(appointment.Status, "Approved", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new ArgumentException("Chỉ có thể đánh dấu Hoàn thành hoặc Vắng mặt cho lịch hẹn đã được xác nhận (Confirmed).");
+                }
+
+                if (appointment.AvailabilitySlot != null && appointment.AvailabilitySlot.StartTime > DateTime.Now)
+                {
+                    throw new ArgumentException("Chỉ có thể đánh dấu Hoàn thành hoặc Vắng mặt khi buổi hẹn đã hoặc đang diễn ra.");
+                }
             }
 
             if ((normalizedStatus == "Rejected" || normalizedStatus == "Cancelled") && string.IsNullOrWhiteSpace(dto.LecturerResponse))
@@ -195,22 +236,32 @@ namespace AcademicAppoinment.Services
                 appointment.AvailabilitySlot.IsAvailable = true;
             }
 
+            var notifTitle = normalizedStatus switch
+            {
+                "Confirmed" => "Lịch hẹn đã được xác nhận",
+                "Cancelled" => "Lịch hẹn đã bị hủy bởi giảng viên",
+                "Completed" => "Buổi tư vấn đã hoàn thành",
+                "No-Show" => "Ghi nhận vắng mặt buổi tư vấn",
+                _ => "Lịch hẹn đã bị từ chối"
+            };
+
+            var notifMessage = normalizedStatus switch
+            {
+                "Confirmed" => $"Lịch tư vấn về chủ đề '{appointment.Topic}' đã được giảng viên xác nhận.",
+                "Cancelled" => $"Lịch tư vấn về chủ đề '{appointment.Topic}' đã bị hủy bởi giảng viên. Lời nhắn: {dto.LecturerResponse}",
+                "Completed" => $"Buổi tư vấn về chủ đề '{appointment.Topic}' đã được giảng viên xác nhận hoàn thành.",
+                "No-Show" => $"Giảng viên đã ghi nhận bạn vắng mặt trong buổi tư vấn '{appointment.Topic}'.",
+                _ => $"Lịch tư vấn về chủ đề '{appointment.Topic}' đã bị từ chối. Phản hồi: {dto.LecturerResponse}"
+            };
+
             _repository.AddNotification(new Notification
             {
                 UserId = appointment.Student!.UserId,
                 StudentId = appointment.StudentId,
                 LecturerId = appointment.LecturerId,
                 AppointmentId = appointment.AppointmentId,
-                Title = normalizedStatus == "Confirmed"
-                    ? "Lịch hẹn đã được xác nhận"
-                    : normalizedStatus == "Cancelled"
-                    ? "Lịch hẹn đã bị hủy bởi giảng viên"
-                    : "Lịch hẹn đã bị từ chối",
-                Message = normalizedStatus == "Confirmed"
-                    ? $"Lịch tư vấn về chủ đề '{appointment.Topic}' đã được giảng viên xác nhận."
-                    : normalizedStatus == "Cancelled"
-                    ? $"Lịch tư vấn về chủ đề '{appointment.Topic}' đã bị hủy bởi giảng viên. Lời nhắn: {dto.LecturerResponse}"
-                    : $"Lịch tư vấn về chủ đề '{appointment.Topic}' đã bị từ chối. Phản hồi: {dto.LecturerResponse}",
+                Title = notifTitle,
+                Message = notifMessage,
                 IsRead = false,
                 CreatedAt = DateTime.Now
             });
@@ -248,13 +299,22 @@ namespace AcademicAppoinment.Services
                 throw new ArgumentException("Không thể hủy lịch hẹn đã bị từ chối.");
             }
 
+            if (string.Equals(appointment.Status, "Completed", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(appointment.Status, "No-Show", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException("Không thể hủy lịch hẹn đã kết thúc.");
+            }
+
             if (appointment.AvailabilitySlot != null && appointment.AvailabilitySlot.StartTime <= DateTime.Now)
             {
                 throw new ArgumentException("Không thể hủy lịch hẹn đã bắt đầu hoặc đã qua.");
             }
 
+            var isLateCancellation = appointment.AvailabilitySlot != null && appointment.AvailabilitySlot.StartTime < DateTime.Now.AddHours(2);
+            var reasonText = isLateCancellation ? $"[Hủy sát giờ] {dto.CancellationReason}" : dto.CancellationReason;
+
             appointment.Status = "Cancelled";
-            appointment.CancellationReason = dto.CancellationReason;
+            appointment.CancellationReason = reasonText;
             appointment.UpdatedAt = DateTime.Now;
 
             if (appointment.AvailabilitySlot != null)
@@ -270,8 +330,8 @@ namespace AcademicAppoinment.Services
                     StudentId = appointment.StudentId,
                     LecturerId = appointment.LecturerId,
                     AppointmentId = appointment.AppointmentId,
-                    Title = "Sinh viên đã hủy lịch hẹn",
-                    Message = $"{appointment.Student?.User?.FullName ?? student.User?.FullName ?? "Sinh viên"} đã hủy lịch tư vấn về chủ đề: {appointment.Topic}.",
+                    Title = isLateCancellation ? "Sinh viên đã hủy lịch hẹn sát giờ" : "Sinh viên đã hủy lịch hẹn",
+                    Message = $"{appointment.Student?.User?.FullName ?? student.User?.FullName ?? "Sinh viên"} đã hủy lịch tư vấn về chủ đề: {appointment.Topic}. Lý do: {dto.CancellationReason}",
                     IsRead = false,
                     CreatedAt = DateTime.Now
                 });
@@ -355,6 +415,16 @@ namespace AcademicAppoinment.Services
                 return "Cancelled";
             }
 
+            if (status.Equals("Completed", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Completed";
+            }
+
+            if (status.Equals("No-Show", StringComparison.OrdinalIgnoreCase) || status.Equals("NoShow", StringComparison.OrdinalIgnoreCase))
+            {
+                return "No-Show";
+            }
+
             if (status.Equals("Pending", StringComparison.OrdinalIgnoreCase))
             {
                 return "Pending";
@@ -381,6 +451,8 @@ namespace AcademicAppoinment.Services
                 LocationOrLink = appointment.AvailabilitySlot?.LocationOrLink,
                 Topic = appointment.Topic,
                 Description = appointment.Description,
+                AttachmentUrl = appointment.AttachmentUrl,
+                AttachmentName = appointment.AttachmentName,
                 Status = appointment.Status,
                 LecturerResponse = appointment.LecturerResponse,
                 CancellationReason = appointment.CancellationReason,

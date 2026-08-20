@@ -53,6 +53,14 @@ namespace AcademicAppoinment.Controllers
             var result = await _authService.UpdateMyAvatarAsync(avatar, User);
             return Ok(result);
         }
+
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            var result = await _authService.ChangePasswordAsync(dto, User);
+            return Ok(new { success = result, message = "Đổi mật khẩu thành công." });
+        }
     }
 }
 

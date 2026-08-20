@@ -5,6 +5,7 @@ import type {
   AppointmentResponseDto,
   AuthResponseDto,
   CancelAppointmentDto,
+  ChangePasswordDto,
   CreateAppointmentDto,
   CreateSlotDto,
   CurrentUserResponseDto,
@@ -19,6 +20,7 @@ import type {
   StudentDetailDto,
   StudentListItemDto,
   UpdateAppointmentStatusDto,
+  UpdateSlotDto,
   UpdateUserRoleDto,
   UpdateUserStatusDto,
 } from '../types/api';
@@ -40,6 +42,11 @@ export const api = {
       body: JSON.stringify(dto),
     }),
   me: () => request<CurrentUserResponseDto>('/api/auth/me'),
+  changePassword: (dto: ChangePasswordDto) =>
+    request<{ success: boolean; message: string }>('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify(dto),
+    }),
   updateMyAvatar: (file: File) => {
     const formData = new FormData();
     formData.append('avatar', file);
@@ -78,6 +85,11 @@ export const api = {
   createSlot: (dto: CreateSlotDto) =>
     request<SlotResponseDto>('/api/availabilityslots', {
       method: 'POST',
+      body: JSON.stringify(dto),
+    }),
+  updateSlot: (id: number, dto: UpdateSlotDto) =>
+    request<SlotResponseDto>(`/api/availabilityslots/${id}`, {
+      method: 'PUT',
       body: JSON.stringify(dto),
     }),
   deleteSlot: (id: number) =>
@@ -140,6 +152,10 @@ export const api = {
   unreadCount: () => request<{ unreadCount: number }>('/api/notifications/unread-count'),
   markNotificationRead: (id: number) =>
     request<{ message: string }>(`/api/notifications/${id}/read`, {
+      method: 'PUT',
+    }),
+  markAllNotificationsRead: () =>
+    request<{ message: string }>('/api/notifications/mark-all-read', {
       method: 'PUT',
     }),
 };

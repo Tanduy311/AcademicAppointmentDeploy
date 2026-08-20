@@ -8,5 +8,6 @@ namespace AcademicAppoinment.Services.Interfaces
         Task<IReadOnlyList<NotificationResponseDto>> GetMyNotificationsAsync(ClaimsPrincipal user);
         Task<int> GetUnreadCountAsync(ClaimsPrincipal user);
         Task<bool> MarkAsReadAsync(int notificationId, ClaimsPrincipal user);
+        Task<bool> MarkAllAsReadAsync(ClaimsPrincipal user);
     }
 }

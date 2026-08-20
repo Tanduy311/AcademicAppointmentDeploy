@@ -169,6 +169,8 @@ namespace AcademicAppoinment.Services
                 LocationOrLink = appointment.AvailabilitySlot?.LocationOrLink,
                 Topic = appointment.Topic,
                 Description = appointment.Description,
+                AttachmentUrl = appointment.AttachmentUrl,
+                AttachmentName = appointment.AttachmentName,
                 Status = appointment.Status,
                 LecturerResponse = appointment.LecturerResponse,
                 CancellationReason = appointment.CancellationReason,

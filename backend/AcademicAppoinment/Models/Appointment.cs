@@ -23,6 +23,10 @@ namespace AcademicAppoinment.Models
 
         public string? LecturerResponse { get; set; }
         public string? CancellationReason { get; set; }
+        [MaxLength(500)]
+        public string? AttachmentUrl { get; set; }
+        [MaxLength(200)]
+        public string? AttachmentName { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 

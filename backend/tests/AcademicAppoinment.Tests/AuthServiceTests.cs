@@ -52,6 +52,68 @@ namespace AcademicAppoinment.Tests
         }
 
         [TestMethod]
+        public async Task ChangePasswordAsync_Succeeds_WhenValid()
+        {
+            using var context = TestDbFactory.CreateContext(nameof(ChangePasswordAsync_Succeeds_WhenValid));
+            SeedRoles(context);
+            SeedStudentUser(context);
+
+            var service = new AuthService(new AppRepository(context), new JwtTokenHelper(TestDbFactory.CreateJwtConfig()), context);
+            var principal = TestDbFactory.CreatePrincipal(new Claim(ClaimTypes.NameIdentifier, "1"));
+
+            var success = await service.ChangePasswordAsync(new ChangePasswordDto
+            {
+                CurrentPassword = "Password123@",
+                NewPassword = "NewPassword123!",
+                ConfirmPassword = "NewPassword123!"
+            }, principal);
+
+            Assert.IsTrue(success);
+
+            var updatedUser = await context.Users.FirstAsync(u => u.UserId == 1);
+            Assert.IsTrue(BCrypt.Net.BCrypt.Verify("NewPassword123!", updatedUser.PasswordHash));
+        }
+
+        [TestMethod]
+        public async Task ChangePasswordAsync_Throws_WhenCurrentPasswordWrong()
+        {
+            using var context = TestDbFactory.CreateContext(nameof(ChangePasswordAsync_Throws_WhenCurrentPasswordWrong));
+            SeedRoles(context);
+            SeedStudentUser(context);
+
+            var service = new AuthService(new AppRepository(context), new JwtTokenHelper(TestDbFactory.CreateJwtConfig()), context);
+            var principal = TestDbFactory.CreatePrincipal(new Claim(ClaimTypes.NameIdentifier, "1"));
+
+            await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+                service.ChangePasswordAsync(new ChangePasswordDto
+                {
+                    CurrentPassword = "WrongPassword",
+                    NewPassword = "NewPassword123!",
+                    ConfirmPassword = "NewPassword123!"
+                }, principal));
+        }
+
+        [TestMethod]
+        public async Task RegisterStudentAsync_Throws_WhenPasswordWeak()
+        {
+            using var context = TestDbFactory.CreateContext(nameof(RegisterStudentAsync_Throws_WhenPasswordWeak));
+            SeedRoles(context);
+
+            var service = new AuthService(new AppRepository(context), new JwtTokenHelper(TestDbFactory.CreateJwtConfig()), context);
+
+            // Password only letters, no digits
+            await Assert.ThrowsExceptionAsync<ArgumentException>(() =>
+                service.RegisterStudentAsync(new RegisterStudentDto
+                {
+                    AccountName = "new_student",
+                    Password = "weakpassword",
+                    FullName = "New Student",
+                    EmailAddress = "student@test.local",
+                    StudentCode = "SV999"
+                }));
+        }
+
+        [TestMethod]
         public async Task UpdateMyAvatarAsync_UpdatesAvatarAndDeletesOldBlob()
         {
             using var context = TestDbFactory.CreateContext(nameof(UpdateMyAvatarAsync_UpdatesAvatarAndDeletesOldBlob));

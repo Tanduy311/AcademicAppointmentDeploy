@@ -10,5 +10,6 @@ namespace AcademicAppoinment.Services.Interfaces
         Task<AuthResponseDto> LoginAsync(LoginDto dto);
         Task<CurrentUserResponseDto> GetCurrentUserAsync(ClaimsPrincipal user);
         Task<CurrentUserResponseDto> UpdateMyAvatarAsync(IFormFile avatar, ClaimsPrincipal user);
+        Task<bool> ChangePasswordAsync(ChangePasswordDto dto, ClaimsPrincipal user);
     }
 }

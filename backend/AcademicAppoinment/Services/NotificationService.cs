@@ -3,6 +3,7 @@ using AcademicAppoinment.Helpers.Exceptions;
 using AcademicAppoinment.Models;
 using AcademicAppoinment.Repositories;
 using AcademicAppoinment.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace AcademicAppoinment.Services
@@ -10,10 +11,12 @@ namespace AcademicAppoinment.Services
     public class NotificationService : INotificationService
     {
         private readonly IAppRepository _repository;
+        private readonly AppDbContext _context;
 
-        public NotificationService(IAppRepository repository)
+        public NotificationService(IAppRepository repository, AppDbContext context)
         {
             _repository = repository;
+            _context = context;
         }
 
         public async Task<IReadOnlyList<NotificationResponseDto>> GetMyNotificationsAsync(ClaimsPrincipal user)
@@ -47,6 +50,25 @@ namespace AcademicAppoinment.Services
             if (!notification.IsRead)
             {
                 notification.IsRead = true;
+                await _repository.SaveChangesAsync();
+            }
+
+            return true;
+        }
+
+        public async Task<bool> MarkAllAsReadAsync(ClaimsPrincipal user)
+        {
+            var userId = GetUserIdFromClaims(user);
+            var unreadNotifications = await _context.Notifications
+                .Where(n => n.UserId == userId && !n.IsRead)
+                .ToListAsync();
+
+            if (unreadNotifications.Count > 0)
+            {
+                foreach (var n in unreadNotifications)
+                {
+                    n.IsRead = true;
+                }
                 await _repository.SaveChangesAsync();
             }
 

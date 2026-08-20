@@ -29,6 +29,8 @@ namespace AcademicAppoinment.Services
 
         public async Task<AuthResponseDto> RegisterStudentAsync(RegisterStudentDto dto)
         {
+            ValidatePasswordComplexity(dto.Password);
+
             if (await _repository.UserAccountExistsAsync(dto.AccountName))
                 throw new ArgumentException("Tên tài khoản đã tồn tại.");
 
@@ -96,6 +98,8 @@ namespace AcademicAppoinment.Services
 
         public async Task<AuthResponseDto> RegisterLecturerAsync(RegisterLecturerDto dto)
         {
+            ValidatePasswordComplexity(dto.Password);
+
             if (await _repository.UserAccountExistsAsync(dto.AccountName))
                 throw new ArgumentException("Tên tài khoản đã tồn tại.");
 
@@ -224,6 +228,38 @@ namespace AcademicAppoinment.Services
             };
         }
 
+        public async Task<bool> ChangePasswordAsync(ChangePasswordDto dto, ClaimsPrincipal user)
+        {
+            var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(userIdClaim, out var userId))
+            {
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin tài khoản.");
+            }
+
+            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (currentUser == null)
+            {
+                throw new KeyNotFoundException("Không tìm thấy người dùng.");
+            }
+
+            if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, currentUser.PasswordHash))
+            {
+                throw new ArgumentException("Mật khẩu hiện tại không chính xác.");
+            }
+
+            if (dto.CurrentPassword == dto.NewPassword)
+            {
+                throw new ArgumentException("Mật khẩu mới không được trùng với mật khẩu hiện tại.");
+            }
+
+            ValidatePasswordComplexity(dto.NewPassword);
+
+            currentUser.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
         public async Task<CurrentUserResponseDto> UpdateMyAvatarAsync(IFormFile avatar, ClaimsPrincipal user)
         {
             if (_avatarStorageService == null)
@@ -240,7 +276,7 @@ namespace AcademicAppoinment.Services
             var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
             if (currentUser == null)
             {
-                throw new KeyNotFoundException("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng.");
+                throw new KeyNotFoundException("Không tìm thấy người dùng.");
             }
 
             var oldBlobName = currentUser.AvatarBlobName;
@@ -267,7 +303,7 @@ namespace AcademicAppoinment.Services
             var refreshed = await _repository.GetUserWithDetailsByIdAsync(userId);
             if (refreshed == null)
             {
-                throw new KeyNotFoundException("KhÃ´ng tÃ¬m tháº¥y ngÆ°á»i dÃ¹ng.");
+                throw new KeyNotFoundException("Không tìm thấy người dùng.");
             }
 
             return new CurrentUserResponseDto
@@ -282,6 +318,19 @@ namespace AcademicAppoinment.Services
                 StudentInfo = refreshed.Student,
                 LecturerInfo = refreshed.Lecturer
             };
+        }
+
+        private static void ValidatePasswordComplexity(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password) || password.Length < 6)
+            {
+                throw new ArgumentException("Mật khẩu phải có ít nhất 6 ký tự.");
+            }
+
+            if (!password.Any(char.IsLetter) || !password.Any(char.IsDigit))
+            {
+                throw new ArgumentException("Mật khẩu phải chứa ít nhất một chữ cái và một chữ số.");
+            }
         }
 
         private async Task SafeDeleteAvatarAsync(string? blobName)

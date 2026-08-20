@@ -5,6 +5,7 @@ using AcademicAppoinment.Helpers.Exceptions;
 using AcademicAppoinment.Models;
 using AcademicAppoinment.Repositories;
 using AcademicAppoinment.Services.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace AcademicAppoinment.Services
@@ -12,10 +13,12 @@ namespace AcademicAppoinment.Services
     public class AdminService : IAdminService
     {
         private readonly IAppRepository _repository;
+        private readonly AppDbContext _context;
 
-        public AdminService(IAppRepository repository)
+        public AdminService(IAppRepository repository, AppDbContext context)
         {
             _repository = repository;
+            _context = context;
         }
 
         public async Task<IReadOnlyList<AdminUserListItemDto>> GetUsersAsync()
@@ -65,6 +68,18 @@ namespace AcademicAppoinment.Services
                 throw new KeyNotFoundException("Không tìm thấy người dùng.");
             }
 
+            // Quy tắc bảo vệ Super Admin: Không thể khóa Admin duy nhất còn lại
+            if (!isActive && user.UserRoles.Any(ur => ur.RoleId == 1))
+            {
+                var activeAdminCount = await _context.UserRoles
+                    .Include(ur => ur.User)
+                    .CountAsync(ur => ur.RoleId == 1 && ur.User != null && ur.User.IsActive);
+                if (activeAdminCount <= 1)
+                {
+                    throw new ArgumentException("Không thể khóa tài khoản Admin duy nhất còn hoạt động trong hệ thống.");
+                }
+            }
+
             user.IsActive = isActive;
             await _repository.SaveChangesAsync();
             return true;
@@ -78,6 +93,18 @@ namespace AcademicAppoinment.Services
             if (user.UserRoles.Count == 1 && user.UserRoles.Any(ur => ur.RoleId == roleId))
             {
                 return true;
+            }
+
+            // Nếu người dùng đang là Admin và đổi sang role khác, kiểm tra xem có phải là Admin duy nhất không
+            if (user.UserRoles.Any(ur => ur.RoleId == 1) && roleId != 1)
+            {
+                var activeAdminCount = await _context.UserRoles
+                    .Include(ur => ur.User)
+                    .CountAsync(ur => ur.RoleId == 1 && ur.User != null && ur.User.IsActive);
+                if (activeAdminCount <= 1)
+                {
+                    throw new ArgumentException("Không thể gỡ quyền Admin của tài khoản Admin duy nhất còn lại trong hệ thống.");
+                }
             }
 
             user.UserRoles.Clear();
@@ -123,6 +150,18 @@ namespace AcademicAppoinment.Services
             if (user.UserRoles.Count <= 1)
             {
                 throw new ArgumentException("Người dùng phải có ít nhất một role.");
+            }
+
+            // Quy tắc bảo vệ Super Admin: Không thể gỡ quyền Admin nếu là Admin duy nhất
+            if (roleId == 1)
+            {
+                var activeAdminCount = await _context.UserRoles
+                    .Include(ur => ur.User)
+                    .CountAsync(ur => ur.RoleId == 1 && ur.User != null && ur.User.IsActive);
+                if (activeAdminCount <= 1)
+                {
+                    throw new ArgumentException("Không thể gỡ quyền Admin của tài khoản Admin duy nhất còn lại trong hệ thống.");
+                }
             }
 
             user.UserRoles.Remove(userRole);
@@ -199,6 +238,8 @@ namespace AcademicAppoinment.Services
                 LocationOrLink = appointment.AvailabilitySlot?.LocationOrLink,
                 Topic = appointment.Topic,
                 Description = appointment.Description,
+                AttachmentUrl = appointment.AttachmentUrl,
+                AttachmentName = appointment.AttachmentName,
                 Status = appointment.Status,
                 LecturerResponse = appointment.LecturerResponse,
                 CancellationReason = appointment.CancellationReason,

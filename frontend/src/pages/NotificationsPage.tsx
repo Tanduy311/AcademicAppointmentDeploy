@@ -37,6 +37,15 @@ export function NotificationsPage() {
     }
   };
 
+  const markAllRead = async () => {
+    try {
+      await api.markAllNotificationsRead();
+      await load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Không thể đánh dấu tất cả đã đọc.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="panel" style={{ textAlign: 'center', padding: 48 }}>
@@ -58,11 +67,21 @@ export function NotificationsPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span className="badge badge-neutral">Tổng: {items.length}</span>
           <span className={`badge ${unreadCount > 0 ? 'badge-danger' : 'badge-success'}`}>
             {unreadCount > 0 ? `Chưa đọc: ${unreadCount}` : 'Đã đọc tất cả'}
           </span>
+          {unreadCount > 0 && (
+            <button
+              type="button"
+              className="btn btn-secondary"
+              style={{ fontSize: '0.82rem', padding: '6px 12px' }}
+              onClick={markAllRead}
+            >
+              Đánh dấu tất cả đã đọc
+            </button>
+          )}
         </div>
       </div>
 

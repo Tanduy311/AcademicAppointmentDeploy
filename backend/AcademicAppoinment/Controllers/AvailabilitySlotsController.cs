@@ -39,6 +39,14 @@ namespace AcademicAppoinment.Controllers
             return Ok(result);
         }
 
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Lecturer")]
+        public async Task<IActionResult> UpdateSlot(int id, [FromBody] UpdateSlotDto dto)
+        {
+            var result = await _slotService.UpdateSlotAsync(id, dto, User);
+            return Ok(result);
+        }
+
         [HttpDelete("{id}")]
         [Authorize(Roles = "Lecturer")]
         public async Task<IActionResult> DeleteSlot(int id)

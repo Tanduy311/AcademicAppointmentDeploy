@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import type { StudentDetailDto } from '../types/api';
 import { useAuth } from '../context/AuthContext';
 import { cleanStringValue, formatDisplayValue } from '../utils/format';
+import { ChangePasswordCard } from '../components/ChangePasswordCard';
 
 export function StudentProfilePage() {
   const { refreshMe } = useAuth();
@@ -327,6 +328,8 @@ export function StudentProfilePage() {
           </div>
         </div>
       </div>
+
+      <ChangePasswordCard />
     </div>
   );
 }
