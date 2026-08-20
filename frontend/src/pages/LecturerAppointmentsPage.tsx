@@ -4,6 +4,7 @@ import { formatDateTime } from '../utils/format';
 import type { AppointmentResponseDto, SlotResponseDto } from '../types/api';
 import { StatusBadge } from '../components/StatusBadge';
 import { WeeklyCalendar, type CalendarEvent } from '../components/WeeklyCalendar';
+import { Pagination } from '../components/Pagination';
 import {
   IconFileText,
   IconBookmark,
@@ -31,6 +32,10 @@ export function LecturerAppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [meetingTypeFilter, setMeetingTypeFilter] = useState('all');
 
+  // Pagination for list view
+  const [listPage, setListPage] = useState(1);
+  const [listPageSize, setListPageSize] = useState(10);
+
   const [busyId, setBusyId] = useState<number | null>(null);
   const [activeItem, setActiveItem] = useState<AppointmentResponseDto | null>(null);
   const [actionType, setActionType] = useState<'Approved' | 'Rejected' | 'Cancelled' | 'Completed' | 'No-Show'>('Approved');
@@ -48,7 +53,7 @@ export function LecturerAppointmentsPage() {
     setLoading(true);
     try {
       const [appointmentResult, slotResult] = await Promise.all([
-        api.lecturerAppointments(),
+        api.allLecturerAppointments(),
         api.mySlots(),
       ]);
       setItems(appointmentResult);
@@ -74,6 +79,8 @@ export function LecturerAppointmentsPage() {
   });
 
   const displayItems = activeTab === 'current' ? currentItems : historyItems;
+  const totalListPages = Math.ceil(displayItems.length / listPageSize) || 1;
+  const paginatedDisplayItems = displayItems.slice((listPage - 1) * listPageSize, listPage * listPageSize);
 
   const rawCalendarEvents: CalendarEvent<AppointmentResponseDto | SlotResponseDto>[] = useMemo(() => [
     ...slots.map((slot) => ({
@@ -416,7 +423,7 @@ export function LecturerAppointmentsPage() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {displayItems.map((item) => {
+            {paginatedDisplayItems.map((item) => {
               const isStartedOrPast = new Date(item.startTime).getTime() <= Date.now();
 
               return (
@@ -564,6 +571,18 @@ export function LecturerAppointmentsPage() {
                 )}
               </div>
             )}
+
+            <Pagination
+              currentPage={listPage}
+              totalPages={totalListPages}
+              totalItems={displayItems.length}
+              pageSize={listPageSize}
+              onPageChange={(p) => setListPage(p)}
+              onPageSizeChange={(s) => {
+                setListPageSize(s);
+                setListPage(1);
+              }}
+            />
           </div>
         </div>
       )}

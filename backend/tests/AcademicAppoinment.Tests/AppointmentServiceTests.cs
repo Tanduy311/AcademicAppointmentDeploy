@@ -231,6 +231,54 @@ namespace AcademicAppoinment.Tests
             Assert.IsNotNull(notification);
         }
 
+        [TestMethod]
+        public async Task GetMyAppointmentsPagedAsync_ReturnsPagedAppointments()
+        {
+            using var context = TestDbFactory.CreateContext(nameof(GetMyAppointmentsPagedAsync_ReturnsPagedAppointments));
+            SeedRoles(context);
+            SeedAppointmentGraph(context);
+
+            var service = new AppointmentService(context, new AppRepository(context));
+            var principal = TestDbFactory.CreatePrincipal(new Claim("StudentId", "2"));
+
+            var filter = new AppointmentFilterDto
+            {
+                PageNumber = 1,
+                PageSize = 10,
+                Tab = "active"
+            };
+
+            var result = await service.GetMyAppointmentsPagedAsync(filter, principal);
+
+            Assert.AreEqual(1, result.TotalItems);
+            Assert.AreEqual(1, result.Items.Count);
+            Assert.AreEqual("Test appointment", result.Items[0].Topic);
+        }
+
+        [TestMethod]
+        public async Task GetLecturerAppointmentsPagedAsync_ReturnsPagedAppointments()
+        {
+            using var context = TestDbFactory.CreateContext(nameof(GetLecturerAppointmentsPagedAsync_ReturnsPagedAppointments));
+            SeedRoles(context);
+            SeedAppointmentGraph(context);
+
+            var service = new AppointmentService(context, new AppRepository(context));
+            var principal = TestDbFactory.CreatePrincipal(new Claim("LecturerId", "3"));
+
+            var filter = new AppointmentFilterDto
+            {
+                PageNumber = 1,
+                PageSize = 10,
+                Status = "Pending"
+            };
+
+            var result = await service.GetLecturerAppointmentsPagedAsync(filter, principal);
+
+            Assert.AreEqual(1, result.TotalItems);
+            Assert.AreEqual(1, result.Items.Count);
+            Assert.AreEqual("Test appointment", result.Items[0].Topic);
+        }
+
         private static void SeedRoles(AppDbContext context)
         {
             context.Roles.AddRange(

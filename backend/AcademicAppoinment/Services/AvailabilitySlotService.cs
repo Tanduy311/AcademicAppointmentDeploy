@@ -209,6 +209,11 @@ namespace AcademicAppoinment.Services
                 throw new ArgumentException("Thời lượng khung giờ rảnh phải từ 15 phút đến 180 phút.");
             }
 
+            if (dto.StartTime.Date != dto.EndTime.Date)
+            {
+                throw new ArgumentException("Khung giờ rảnh phải diễn ra trong cùng một ngày.");
+            }
+
             if (dto.StartTime > DateTime.Now.AddDays(60))
             {
                 throw new ArgumentException("Không thể tạo khung giờ rảnh trước quá 60 ngày.");

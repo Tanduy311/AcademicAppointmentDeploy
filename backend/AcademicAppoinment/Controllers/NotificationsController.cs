@@ -1,3 +1,4 @@
+using AcademicAppoinment.DTOs.Notification;
 using AcademicAppoinment.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +18,14 @@ namespace AcademicAppoinment.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetMyNotifications()
+        public async Task<IActionResult> GetMyNotifications([FromQuery] NotificationFilterDto filter)
+        {
+            var result = await _notificationService.GetMyNotificationsPagedAsync(filter, User);
+            return Ok(result);
+        }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllMyNotifications()
         {
             var result = await _notificationService.GetMyNotificationsAsync(User);
             return Ok(result);

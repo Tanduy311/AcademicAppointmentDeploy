@@ -15,7 +15,7 @@ builder.Services.AddCors(options =>
     });
 });
 builder.Services.AddAcademicAppointmentServices(builder.Configuration);
-// Configure the HTTP request pipeline.
+
 var app = builder.Build();
 
 app.UseCors("Frontend");
@@ -24,7 +24,10 @@ app.UseMiddleware<AcademicAppoinment.Middlewares.GlobalExceptionMiddleware>();
 if (app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
+}
 
+try
+{
     using var scope = app.Services.CreateScope();
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
@@ -51,6 +54,10 @@ if (app.Environment.IsDevelopment())
 
         context.SaveChanges();
     }
+}
+catch (Exception ex)
+{
+    app.Logger.LogWarning(ex, "Không thể tự động khởi tạo tài khoản admin lúc khởi động.");
 }
 
 app.UseSwagger();

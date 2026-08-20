@@ -3,6 +3,7 @@ import { IconCalendar, IconSearch, IconTeacher, IconUser } from '../components/I
 import { api } from '../services/api';
 import type { AppointmentResponseDto } from '../types/api';
 import { formatDateTime, formatStatusLabel, getStatusTone, parseDate } from '../utils/format';
+import { Pagination } from '../components/Pagination';
 
 function StatusBadge({ value }: { value: string }) {
   const tone = getStatusTone(value);
@@ -23,9 +24,13 @@ export function AdminAppointmentsPage() {
   const [timeFilter, setTimeFilter] = useState<'current' | 'history' | 'all'>('current');
   const [meetingTypeFilter, setMeetingTypeFilter] = useState('ALL');
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   useEffect(() => {
     api
-      .adminAppointments()
+      .allAdminAppointments()
       .then(setAppointments)
       .catch((err) => alert(err instanceof Error ? err.message : 'Không thể tải danh sách cuộc hẹn.'))
       .finally(() => setLoading(false));
@@ -36,23 +41,34 @@ export function AdminAppointmentsPage() {
     [appointments]
   );
 
-  const filteredAppointments = appointments.filter((item) => {
-    const query = searchQuery.trim().toLowerCase();
-    const matchesSearch =
-      !query ||
-      item.topic.toLowerCase().includes(query) ||
-      item.studentName.toLowerCase().includes(query) ||
-      item.lecturerName.toLowerCase().includes(query) ||
-      (item.studentCode && item.studentCode.toLowerCase().includes(query)) ||
-      (item.department && item.department.toLowerCase().includes(query));
+  const filteredAppointments = useMemo(() => {
+    return appointments.filter((item) => {
+      const query = searchQuery.trim().toLowerCase();
+      const matchesSearch =
+        !query ||
+        item.topic.toLowerCase().includes(query) ||
+        item.studentName.toLowerCase().includes(query) ||
+        item.lecturerName.toLowerCase().includes(query) ||
+        (item.studentCode && item.studentCode.toLowerCase().includes(query)) ||
+        (item.department && item.department.toLowerCase().includes(query));
 
-    const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
-    const matchesMeetingType = meetingTypeFilter === 'ALL' || item.meetingType === meetingTypeFilter;
-    const isCurrent = isCurrentAppointment(item);
-    const matchesTime = timeFilter === 'all' || (timeFilter === 'current' ? isCurrent : !isCurrent);
+      const matchesStatus = statusFilter === 'ALL' || item.status === statusFilter;
+      const matchesMeetingType = meetingTypeFilter === 'ALL' || item.meetingType === meetingTypeFilter;
+      const isCurrent = isCurrentAppointment(item);
+      const matchesTime = timeFilter === 'all' || (timeFilter === 'current' ? isCurrent : !isCurrent);
 
-    return matchesSearch && matchesStatus && matchesMeetingType && matchesTime;
-  });
+      return matchesSearch && matchesStatus && matchesMeetingType && matchesTime;
+    });
+  }, [appointments, searchQuery, statusFilter, meetingTypeFilter, timeFilter]);
+
+  const totalPages = Math.ceil(filteredAppointments.length / pageSize) || 1;
+  const paginatedAppointments = useMemo(() => {
+    return filteredAppointments.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  }, [filteredAppointments, currentPage, pageSize]);
+
+  const handleFilterChange = () => {
+    setCurrentPage(1);
+  };
 
   if (loading) {
     return (
@@ -69,13 +85,16 @@ export function AdminAppointmentsPage() {
           <div>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
               <IconCalendar size={24} style={{ color: 'var(--accent)' }} />
-              <span>Quản lý cuộc hẹn hiện tại</span>
+              <span>Quản lý cuộc hẹn hệ thống</span>
             </h1>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
               Theo dõi toàn bộ lịch hẹn giữa sinh viên và giảng viên trên hệ thống.
             </p>
           </div>
 
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span className="badge badge-neutral">Tổng: {filteredAppointments.length} cuộc hẹn</span>
+          </div>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 1fr) repeat(3, minmax(160px, 220px))', gap: 14, alignItems: 'end' }}>
@@ -87,13 +106,22 @@ export function AdminAppointmentsPage() {
             <input
               placeholder="Tên sinh viên, giảng viên, mã SV, chủ đề..."
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                handleFilterChange();
+              }}
             />
           </label>
 
           <label className="field">
             <span>Khoảng lịch</span>
-            <select value={timeFilter} onChange={(event) => setTimeFilter(event.target.value as 'current' | 'history' | 'all')}>
+            <select
+              value={timeFilter}
+              onChange={(event) => {
+                setTimeFilter(event.target.value as 'current' | 'history' | 'all');
+                handleFilterChange();
+              }}
+            >
               <option value="current">Cuộc hẹn hiện tại</option>
               <option value="history">Lịch sử</option>
               <option value="all">Tất cả</option>
@@ -102,10 +130,18 @@ export function AdminAppointmentsPage() {
 
           <label className="field">
             <span>Trạng thái</span>
-            <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+            <select
+              value={statusFilter}
+              onChange={(event) => {
+                setStatusFilter(event.target.value);
+                handleFilterChange();
+              }}
+            >
               <option value="ALL">Tất cả trạng thái</option>
               <option value="Pending">Chờ duyệt</option>
               <option value="Confirmed">Đã duyệt</option>
+              <option value="Completed">Hoàn thành</option>
+              <option value="No-Show">Vắng mặt (No-Show)</option>
               <option value="Rejected">Từ chối</option>
               <option value="Cancelled">Đã hủy</option>
             </select>
@@ -113,7 +149,13 @@ export function AdminAppointmentsPage() {
 
           <label className="field">
             <span>Hình thức</span>
-            <select value={meetingTypeFilter} onChange={(event) => setMeetingTypeFilter(event.target.value)}>
+            <select
+              value={meetingTypeFilter}
+              onChange={(event) => {
+                setMeetingTypeFilter(event.target.value);
+                handleFilterChange();
+              }}
+            >
               <option value="ALL">Tất cả hình thức</option>
               {meetingTypes.map((type) => (
                 <option key={type} value={type}>
@@ -126,7 +168,7 @@ export function AdminAppointmentsPage() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {filteredAppointments.map((item) => (
+        {paginatedAppointments.map((item) => (
           <div key={item.appointmentId} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
               <div>
@@ -154,9 +196,23 @@ export function AdminAppointmentsPage() {
               <span><strong>Khoa/Bộ môn:</strong> {item.department || 'Chưa cập nhật'}</span>
             </div>
 
-            {(item.description || item.lecturerResponse || item.cancellationReason) && (
+            {(item.description || item.attachmentUrl || item.lecturerResponse || item.cancellationReason) && (
               <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 12, display: 'grid', gap: 8, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
                 {item.description && <span><strong>Mô tả:</strong> {item.description}</span>}
+                {item.attachmentUrl && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span><strong>Tài liệu đính kèm:</strong> {item.attachmentName || 'Tệp đính kèm'}</span>
+                    <a
+                      href={item.attachmentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.72rem', padding: '2px 8px' }}
+                    >
+                      Xem file
+                    </a>
+                  </div>
+                )}
                 {item.lecturerResponse && <span><strong>Phản hồi giảng viên:</strong> {item.lecturerResponse}</span>}
                 {item.cancellationReason && <span><strong>Lý do hủy:</strong> {item.cancellationReason}</span>}
               </div>
@@ -169,6 +225,18 @@ export function AdminAppointmentsPage() {
             Không tìm thấy cuộc hẹn nào phù hợp với bộ lọc.
           </div>
         )}
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={filteredAppointments.length}
+          pageSize={pageSize}
+          onPageChange={(p) => setCurrentPage(p)}
+          onPageSizeChange={(s) => {
+            setPageSize(s);
+            setCurrentPage(1);
+          }}
+        />
       </div>
     </div>
   );

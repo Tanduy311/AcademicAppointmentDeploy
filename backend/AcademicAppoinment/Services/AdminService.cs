@@ -1,5 +1,6 @@
 using AcademicAppoinment.DTOs.Admin;
 using AcademicAppoinment.DTOs.Appointments;
+using AcademicAppoinment.DTOs.Common;
 using AcademicAppoinment.Helpers;
 using AcademicAppoinment.Helpers.Exceptions;
 using AcademicAppoinment.Models;
@@ -42,6 +43,52 @@ namespace AcademicAppoinment.Services
         {
             var appointments = await _repository.GetAppointmentsAsync();
             return appointments.Select(ToAppointmentResponseDto).ToList();
+        }
+
+        public async Task<PagedResultDto<AppointmentResponseDto>> GetAppointmentsPagedAsync(AppointmentFilterDto filter)
+        {
+            var query = _context.Appointments
+                .Include(a => a.Student)
+                    .ThenInclude(s => s!.User)
+                .Include(a => a.Lecturer)
+                    .ThenInclude(l => l!.User)
+                .Include(a => a.AvailabilitySlot)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(filter.Status))
+            {
+                query = query.Where(a => a.Status == filter.Status);
+            }
+            else if (string.Equals(filter.Tab, "active", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(a => a.Status == "Pending" || a.Status == "Confirmed");
+            }
+            else if (string.Equals(filter.Tab, "history", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(a => a.Status == "Completed" || a.Status == "No-Show" || a.Status == "Cancelled" || a.Status == "Rejected");
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.Search))
+            {
+                var term = filter.Search.Trim().ToLower();
+                query = query.Where(a => a.Topic.ToLower().Contains(term) ||
+                                         (a.Student != null && a.Student.User != null && a.Student.User.FullName.ToLower().Contains(term)) ||
+                                         (a.Student != null && a.Student.StudentCode.ToLower().Contains(term)) ||
+                                         (a.Lecturer != null && a.Lecturer.User != null && a.Lecturer.User.FullName.ToLower().Contains(term)));
+            }
+
+            var totalItems = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .ToListAsync();
+
+            return new PagedResultDto<AppointmentResponseDto>(
+                items.Select(ToAppointmentResponseDto).ToList(),
+                totalItems,
+                filter.PageNumber,
+                filter.PageSize);
         }
 
         public async Task<IReadOnlyList<RoleDto>> GetRolesAsync()

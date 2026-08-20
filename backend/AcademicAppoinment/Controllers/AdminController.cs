@@ -39,7 +39,14 @@ namespace AcademicAppoinment.Controllers
         }
 
         [HttpGet("appointments")]
-        public async Task<IActionResult> GetAppointments()
+        public async Task<IActionResult> GetAppointments([FromQuery] AcademicAppoinment.DTOs.Appointments.AppointmentFilterDto filter)
+        {
+            var result = await _adminService.GetAppointmentsPagedAsync(filter);
+            return Ok(result);
+        }
+
+        [HttpGet("appointments/all")]
+        public async Task<IActionResult> GetAllAppointments()
         {
             var result = await _adminService.GetAppointmentsAsync();
             return Ok(result);

@@ -85,6 +85,16 @@ Báo cáo này ghi nhận chi tiết toàn bộ các **Quy tắc Nghiệp vụ (
 10. [frontend/src/pages/LecturerProfilePage.tsx](file:///c:/Users/Admin/Desktop/AcademicAppointment/frontend/src/pages/LecturerProfilePage.tsx): Tích hợp `ChangePasswordCard`.
 11. [frontend/src/pages/NotificationsPage.tsx](file:///c:/Users/Admin/Desktop/AcademicAppointment/frontend/src/pages/NotificationsPage.tsx): Tích hợp nút "Đánh dấu tất cả đã đọc".
 
+### Nhóm 5: Tính Năng Phân Trang (Pagination) & Tối Ưu Hệ Thống
+
+| Mã Rule | Tên quy tắc nghiệp vụ | Mô tả chi tiết & Xử lý | Vị trí cài đặt mã nguồn |
+| :--- | :--- | :--- | :--- |
+| **BR-5.1** | **Phân trang danh sách thông báo (Notifications Pagination)** | Cung cấp query phân trang `GET /api/notifications?pageNumber=1&pageSize=10&isRead=` trả về `PagedResultDto<NotificationResponseDto>`. Giao diện hỗ trợ chuyển trang, chọn 10/20/50 dòng và lọc Đã đọc/Chưa đọc. | [NotificationsController.cs](file:///c:/Users/Admin/Desktop/AcademicAppointment/backend/AcademicAppoinment/Controllers/NotificationsController.cs), [NotificationService.cs](file:///c:/Users/Admin/Desktop/AcademicAppointment/backend/AcademicAppoinment/Services/NotificationService.cs), [NotificationsPage.tsx](file:///c:/Users/Admin/Desktop/AcademicAppointment/frontend/src/pages/NotificationsPage.tsx) |
+| **BR-5.2** | **Phân trang lịch hẹn Sinh viên & Giảng viên** | Bổ sung API phân trang và lọc `GET /api/appointments/my-appointments` & `GET /api/appointments/lecturer-appointments` hỗ trợ lọc theo tab (`active`/`history`) và tìm kiếm. Tích hợp component `<Pagination />` cho cả giao diện Sinh viên và Giảng viên. | [AppointmentsController.cs](file:///c:/Users/Admin/Desktop/AcademicAppointment/backend/AcademicAppoinment/Controllers/AppointmentsController.cs), [AppointmentService.cs](file:///c:/Users/Admin/Desktop/AcademicAppointment/backend/AcademicAppoinment/Services/AppointmentService.cs), [StudentAppointmentsPage.tsx](file:///c:/Users/Admin/Desktop/AcademicAppointment/frontend/src/pages/StudentAppointmentsPage.tsx), [LecturerAppointmentsPage.tsx](file:///c:/Users/Admin/Desktop/AcademicAppointment/frontend/src/pages/LecturerAppointmentsPage.tsx) |
+| **BR-5.3** | **Phân trang danh sách cuộc hẹn Admin** | Bổ sung API `GET /api/admin/appointments` có phân trang và tích hợp giao diện phân trang trên màn hình quản lý Admin. | [AdminController.cs](file:///c:/Users/Admin/Desktop/AcademicAppointment/backend/AcademicAppoinment/Controllers/AdminController.cs), [AdminService.cs](file:///c:/Users/Admin/Desktop/AcademicAppointment/backend/AcademicAppoinment/Services/AdminService.cs), [AdminAppointmentsPage.tsx](file:///c:/Users/Admin/Desktop/AcademicAppointment/frontend/src/pages/AdminAppointmentsPage.tsx) |
+| **BR-5.4** | **Bảo mật Upload File Đính Kèm (Extension Whitelist)** | Khóa và chặn mọi file thực thi nguy hiểm (`.exe`, `.bat`, `.sh`, `.php`, `.dll`, ...). Chỉ cho phép các định dạng tài liệu học thuật hợp lệ (`.pdf`, `.doc`, `.docx`, `.xls`, `.xlsx`, `.ppt`, `.pptx`, `.txt`, `.zip`, `.rar`, `.7z`, `.png`, `.jpg`, `.jpeg`, `.webp`). | [SupabaseStorageService.cs](file:///c:/Users/Admin/Desktop/AcademicAppointment/backend/AcademicAppoinment/Services/SupabaseStorageService.cs) |
+| **BR-5.5** | **Ràng buộc Slot trong cùng một ngày** | Chặn việc tạo slot rảnh bắt đầu ngày hôm nay và kết thúc sang ngày hôm sau (`dto.StartTime.Date != dto.EndTime.Date`). | [AvailabilitySlotService.cs](file:///c:/Users/Admin/Desktop/AcademicAppointment/backend/AcademicAppoinment/Services/AvailabilitySlotService.cs) |
+
 ---
 
 ## 4. Kết Quả Kiểm Thử Tự Động (Automated Test Suite)
@@ -95,10 +105,10 @@ Toàn bộ các test cases xUnit đã được cập nhật và kiểm thử t�
 dotnet test backend/tests/AcademicAppoinment.Tests/AcademicAppoinment.Tests.csproj
 
 Test run for .../AcademicAppoinment.Tests.dll (.NETCoreApp,Version=v8.0)
-Passed! - Failed: 0, Passed: 20, Skipped: 0, Total: 20, Duration: 10 s
+Passed! - Failed: 0, Passed: 22, Skipped: 0, Total: 22, Duration: 12 s
 ```
 
-### Chi tiết 20 bài test đã chạy:
+### Chi tiết 22 bài test đã chạy:
 1. `AppointmentServiceTests.CancelAppointmentAsync_ReopensSlot` - PASSED
 2. `AppointmentServiceTests.UpdateAppointmentStatusAsync_Rejected_ReopensSlot` - PASSED
 3. `AppointmentServiceTests.CreateAppointmentAsync_Throws_WhenBookingLessThan2HoursInAdvance` - PASSED
@@ -106,31 +116,34 @@ Passed! - Failed: 0, Passed: 20, Skipped: 0, Total: 20, Duration: 10 s
 5. `AppointmentServiceTests.DeleteSlotAsync_SoftDeletesSlot_AndKeepsHistory` - PASSED
 6. `AppointmentServiceTests.CreateSlotAsync_Throws_WhenDurationLessThan15OrGreaterThan180Minutes` - PASSED
 7. `AppointmentServiceTests.UpdateSlotAsync_UpdatesLocation_AndNotifiesStudent` - PASSED
-8. `AdminServiceTests.SetUserActiveAsync_Throws_WhenAdminTargetsSelf` - PASSED
-9. `AdminServiceTests.SetUserActiveAsync_Throws_WhenDeactivatingOnlyActiveAdmin` - PASSED
-10. `AdminServiceTests.SetUserRoleAsync_Throws_WhenTargetHasNoLecturerProfile` - PASSED
-11. `AdminServiceTests.AddUserRoleAsync_AddsRole_WhenRoleIsValid` - PASSED
-12. `AdminServiceTests.RemoveUserRoleAsync_RemovesRole_WhenUserHasMultipleRoles` - PASSED
-13. `AuthServiceTests.LoginAsync_ReturnsToken_ForValidCredentials` - PASSED
-14. `AuthServiceTests.LoginAsync_Throws_WhenPasswordIsWrong` - PASSED
-15. `AuthServiceTests.ChangePasswordAsync_Succeeds_WhenValid` - PASSED
-16. `AuthServiceTests.ChangePasswordAsync_Throws_WhenCurrentPasswordWrong` - PASSED
-17. `AuthServiceTests.RegisterStudentAsync_Throws_WhenPasswordWeak` - PASSED
-18. `AuthServiceTests.UpdateMyAvatarAsync_UpdatesAvatarAndDeletesOldBlob` - PASSED
-19. `StudentServiceTests.GetStudentProfileAsync_ReturnsCorrectDto` - PASSED
-20. `StudentServiceTests.UpdateStudentProfileAsync_SavesChanges` - PASSED
+8. `AppointmentServiceTests.GetMyAppointmentsPagedAsync_ReturnsPagedAppointments` - PASSED
+9. `AppointmentServiceTests.GetLecturerAppointmentsPagedAsync_ReturnsPagedAppointments` - PASSED
+10. `AdminServiceTests.SetUserActiveAsync_Throws_WhenAdminTargetsSelf` - PASSED
+11. `AdminServiceTests.SetUserActiveAsync_Throws_WhenDeactivatingOnlyActiveAdmin` - PASSED
+12. `AdminServiceTests.SetUserRoleAsync_Throws_WhenTargetHasNoLecturerProfile` - PASSED
+13. `AdminServiceTests.AddUserRoleAsync_AddsRole_WhenRoleIsValid` - PASSED
+14. `AdminServiceTests.RemoveUserRoleAsync_RemovesRole_WhenUserHasMultipleRoles` - PASSED
+15. `AuthServiceTests.LoginAsync_ReturnsToken_ForValidCredentials` - PASSED
+16. `AuthServiceTests.LoginAsync_Throws_WhenPasswordIsWrong` - PASSED
+17. `AuthServiceTests.ChangePasswordAsync_Succeeds_WhenValid` - PASSED
+18. `AuthServiceTests.ChangePasswordAsync_Throws_WhenCurrentPasswordWrong` - PASSED
+19. `AuthServiceTests.RegisterStudentAsync_Throws_WhenPasswordWeak` - PASSED
+20. `AuthServiceTests.UpdateMyAvatarAsync_UpdatesAvatarAndDeletesOldBlob` - PASSED
+21. `StudentServiceTests.GetStudentProfileAsync_ReturnsCorrectDto` - PASSED
+22. `StudentServiceTests.UpdateStudentProfileAsync_SavesChanges` - PASSED
 
 ### Kiểm thử Frontend Build:
 ```bash
 npm run build
-✓ 60 modules transformed.
+✓ 61 modules transformed.
 dist/assets/index-CaAFqoTu.css   26.82 kB │ gzip:  5.89 kB
-dist/assets/index-gLBeYX8d.js   313.81 kB │ gzip: 82.05 kB
-✓ built in 4.16s
+dist/assets/index-CyjiIJb3.js   320.42 kB │ gzip: 83.65 kB
+✓ built in 3.46s
 ```
 
 ---
 
 ## 5. Kết Luận
 
-Tất cả các business rules đã được triển khai hoàn chỉnh, nhất quán từ cơ sở dữ liệu, API backend đến giao diện frontend, đáp ứng đầy đủ tiêu chuẩn nghiệp vụ của một Cổng Đặt Lịch Hẹn Học Thuật thông minh, an toàn và chuyên nghiệp.
+Tất cả các business rules và tính năng phân trang (Pagination) cùng các cơ chế bảo mật hệ thống đã được triển khai hoàn chỉnh, nhất quán từ cơ sở dữ liệu, API backend đến giao diện frontend, đáp ứng đầy đủ tiêu chuẩn nghiệp vụ của một Cổng Đặt Lịch Hẹn Học Thuật thông minh, an toàn và chuyên nghiệp.
+

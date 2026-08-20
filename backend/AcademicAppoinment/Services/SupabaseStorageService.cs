@@ -12,6 +12,11 @@ namespace AcademicAppoinment.Services
             ".jpg", ".jpeg", ".png", ".webp"
         };
 
+        private static readonly HashSet<string> AllowedAttachmentExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".zip", ".rar", ".7z", ".png", ".jpg", ".jpeg", ".webp"
+        };
+
         private static readonly HashSet<string> AllowedAvatarContentTypes = new(StringComparer.OrdinalIgnoreCase)
         {
             "image/jpeg", "image/png", "image/webp"
@@ -118,6 +123,12 @@ namespace AcademicAppoinment.Services
             if (file.Length > MaxUploadSizeBytes)
             {
                 throw new ArgumentException("File upload không được vượt quá 10MB.");
+            }
+
+            var ext = Path.GetExtension(file.FileName);
+            if (string.IsNullOrWhiteSpace(ext) || !AllowedAttachmentExtensions.Contains(ext))
+            {
+                throw new ArgumentException("Định dạng file không được hỗ trợ. Vui lòng chỉ upload tài liệu (PDF, Word, Excel, PowerPoint, Text, ZIP, RAR, Ảnh).");
             }
         }
 

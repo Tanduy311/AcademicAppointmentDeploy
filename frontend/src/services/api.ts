@@ -2,6 +2,7 @@ import { request } from './apiClient';
 import type {
   AdminUserDetailDto,
   AdminUserListItemDto,
+  AppointmentQueryParams,
   AppointmentResponseDto,
   AuthResponseDto,
   CancelAppointmentDto,
@@ -9,10 +10,13 @@ import type {
   CreateAppointmentDto,
   CreateSlotDto,
   CurrentUserResponseDto,
+  FileUploadResponseDto,
   LecturerDetailDto,
   LecturerListItemDto,
   LoginDto,
+  NotificationQueryParams,
   NotificationResponseDto,
+  PagedResult,
   RegisterLecturerDto,
   RegisterStudentDto,
   RoleDto,
@@ -20,10 +24,24 @@ import type {
   StudentDetailDto,
   StudentListItemDto,
   UpdateAppointmentStatusDto,
+  UpdateLecturerProfileDto,
   UpdateSlotDto,
+  UpdateStudentProfileDto,
   UpdateUserRoleDto,
   UpdateUserStatusDto,
 } from '../types/api';
+
+function buildQueryString(params?: object): string {
+  if (!params) return '';
+  const searchParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(params as Record<string, unknown>)) {
+    if (value !== undefined && value !== null && value !== '') {
+      searchParams.append(key, String(value));
+    }
+  }
+  const query = searchParams.toString();
+  return query ? `?${query}` : '';
+}
 
 export const api = {
   login: (dto: LoginDto) =>
@@ -42,6 +60,7 @@ export const api = {
       body: JSON.stringify(dto),
     }),
   me: () => request<CurrentUserResponseDto>('/api/auth/me'),
+  currentUser: () => request<CurrentUserResponseDto>('/api/auth/me'),
   changePassword: (dto: ChangePasswordDto) =>
     request<{ success: boolean; message: string }>('/api/auth/change-password', {
       method: 'POST',
@@ -61,8 +80,14 @@ export const api = {
     request<LecturerDetailDto>(`/api/lecturers/${lecturerId}`),
 
   appointmentsById: (id: number) => request<AppointmentResponseDto>(`/api/appointments/${id}`),
-  myAppointments: () => request<AppointmentResponseDto[]>('/api/appointments/my-appointments'),
-  lecturerAppointments: () => request<AppointmentResponseDto[]>('/api/appointments/lecturer-appointments'),
+  myAppointments: (params?: AppointmentQueryParams) =>
+    request<PagedResult<AppointmentResponseDto>>(`/api/appointments/my-appointments${buildQueryString(params)}`),
+  allMyAppointments: () =>
+    request<AppointmentResponseDto[]>('/api/appointments/my-appointments/all'),
+  lecturerAppointments: (params?: AppointmentQueryParams) =>
+    request<PagedResult<AppointmentResponseDto>>(`/api/appointments/lecturer-appointments${buildQueryString(params)}`),
+  allLecturerAppointments: () =>
+    request<AppointmentResponseDto[]>('/api/appointments/lecturer-appointments/all'),
   createAppointment: (dto: CreateAppointmentDto) =>
     request<AppointmentResponseDto>('/api/appointments', {
       method: 'POST',
@@ -101,14 +126,14 @@ export const api = {
   studentById: (studentId: number) =>
     request<StudentDetailDto>(`/api/students/${studentId}`),
   myStudentProfile: () => request<StudentDetailDto>('/api/students/me'),
-  updateStudentProfile: (dto: import('../types/api').UpdateStudentProfileDto) =>
+  updateStudentProfile: (dto: UpdateStudentProfileDto) =>
     request<StudentDetailDto>('/api/students/me', {
       method: 'PUT',
       body: JSON.stringify(dto),
     }),
 
   myLecturerProfile: () => request<LecturerDetailDto>('/api/lecturers/me'),
-  updateLecturerProfile: (dto: import('../types/api').UpdateLecturerProfileDto) =>
+  updateLecturerProfile: (dto: UpdateLecturerProfileDto) =>
     request<LecturerDetailDto>('/api/lecturers/me', {
       method: 'PUT',
       body: JSON.stringify(dto),
@@ -118,7 +143,7 @@ export const api = {
     const formData = new FormData();
     formData.append('file', file);
     const query = folder ? `?folder=${encodeURIComponent(folder)}` : '';
-    return request<import('../types/api').FileUploadResponseDto>(`/api/fileupload/upload${query}`, {
+    return request<FileUploadResponseDto>(`/api/fileupload/upload${query}`, {
       method: 'POST',
       body: formData,
     });
@@ -126,7 +151,9 @@ export const api = {
 
   users: () => request<AdminUserListItemDto[]>('/api/admin/users'),
   userById: (userId: number) => request<AdminUserDetailDto>(`/api/admin/users/${userId}`),
-  adminAppointments: () => request<AppointmentResponseDto[]>('/api/admin/appointments'),
+  adminAppointments: (params?: AppointmentQueryParams) =>
+    request<PagedResult<AppointmentResponseDto>>(`/api/admin/appointments${buildQueryString(params)}`),
+  allAdminAppointments: () => request<AppointmentResponseDto[]>('/api/admin/appointments/all'),
   roles: () => request<RoleDto[]>('/api/admin/roles'),
   updateUserStatus: (userId: number, dto: UpdateUserStatusDto) =>
     request<{ message: string }>(`/api/admin/users/${userId}/status`, {
@@ -148,7 +175,9 @@ export const api = {
       method: 'DELETE',
     }),
 
-  notifications: () => request<NotificationResponseDto[]>('/api/notifications'),
+  notifications: (params?: NotificationQueryParams) =>
+    request<PagedResult<NotificationResponseDto>>(`/api/notifications${buildQueryString(params)}`),
+  allNotifications: () => request<NotificationResponseDto[]>('/api/notifications/all'),
   unreadCount: () => request<{ unreadCount: number }>('/api/notifications/unread-count'),
   markNotificationRead: (id: number) =>
     request<{ message: string }>(`/api/notifications/${id}/read`, {

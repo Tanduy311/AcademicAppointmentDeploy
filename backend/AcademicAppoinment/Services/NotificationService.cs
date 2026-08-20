@@ -1,3 +1,4 @@
+using AcademicAppoinment.DTOs.Common;
 using AcademicAppoinment.DTOs.Notification;
 using AcademicAppoinment.Helpers.Exceptions;
 using AcademicAppoinment.Models;
@@ -24,6 +25,27 @@ namespace AcademicAppoinment.Services
             var userId = GetUserIdFromClaims(user);
             var notifications = await _repository.GetNotificationsByUserIdAsync(userId);
             return notifications.Select(ToNotificationResponseDto).ToList();
+        }
+
+        public async Task<PagedResultDto<NotificationResponseDto>> GetMyNotificationsPagedAsync(NotificationFilterDto filter, ClaimsPrincipal user)
+        {
+            var userId = GetUserIdFromClaims(user);
+            var query = _context.Notifications.Where(n => n.UserId == userId);
+
+            if (filter.IsRead.HasValue)
+            {
+                query = query.Where(n => n.IsRead == filter.IsRead.Value);
+            }
+
+            var totalItems = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(n => n.CreatedAt)
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .Select(n => ToNotificationResponseDto(n))
+                .ToListAsync();
+
+            return new PagedResultDto<NotificationResponseDto>(items, totalItems, filter.PageNumber, filter.PageSize);
         }
 
         public async Task<int> GetUnreadCountAsync(ClaimsPrincipal user)

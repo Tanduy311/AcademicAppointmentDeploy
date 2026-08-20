@@ -269,3 +269,28 @@ export interface FileUploadResponseDto {
   fileSize: number;
   contentType: string;
 }
+
+export interface PagedResult<T> {
+  items: T[];
+  pageNumber: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
+export interface AppointmentQueryParams {
+  pageNumber?: number;
+  pageSize?: number;
+  status?: string;
+  tab?: 'active' | 'history' | string;
+  search?: string;
+}
+
+export interface NotificationQueryParams {
+  pageNumber?: number;
+  pageSize?: number;
+  isRead?: boolean;
+}
+

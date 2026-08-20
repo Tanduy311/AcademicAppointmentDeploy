@@ -5,6 +5,7 @@ import { formatDateTime } from '../utils/format';
 import type { AppointmentResponseDto, LecturerListItemDto, SlotResponseDto } from '../types/api';
 import { StatusBadge } from '../components/StatusBadge';
 import { WeeklyCalendar, type CalendarEvent } from '../components/WeeklyCalendar';
+import { Pagination } from '../components/Pagination';
 import {
   IconBookmark,
   IconTeacher,
@@ -31,6 +32,10 @@ export function StudentAppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [meetingTypeFilter, setMeetingTypeFilter] = useState('all');
   const [detailLoadingId, setDetailLoadingId] = useState<number | null>(null);
+
+  // Pagination for list view
+  const [listPage, setListPage] = useState(1);
+  const [listPageSize, setListPageSize] = useState(10);
   
   // Separate Modal States: 'view' | 'cancel' | null
   const [activeModal, setActiveModal] = useState<{
@@ -45,7 +50,7 @@ export function StudentAppointmentsPage() {
     setLoading(true);
     try {
       const [appointmentResult, lecturerResult] = await Promise.all([
-        api.myAppointments(),
+        api.allMyAppointments(),
         api.lecturers(),
       ]);
       setItems(appointmentResult);
@@ -85,6 +90,8 @@ export function StudentAppointmentsPage() {
   });
 
   const displayItems = activeTab === 'current' ? currentItems : activeTab === 'history' ? historyItems : [];
+  const totalListPages = Math.ceil(displayItems.length / listPageSize) || 1;
+  const paginatedItems = displayItems.slice((listPage - 1) * listPageSize, listPage * listPageSize);
   const calendarEvents: CalendarEvent<AppointmentResponseDto | SlotResponseDto>[] = useMemo(() => {
     const appointmentEvents: CalendarEvent<AppointmentResponseDto>[] = items.map((item) => ({
       id: `appointment-${item.appointmentId}`,
@@ -416,7 +423,7 @@ export function StudentAppointmentsPage() {
 
       {viewMode === 'list' && activeTab !== 'available' ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {displayItems.map((item) => (
+          {paginatedItems.map((item) => (
             <div key={item.appointmentId} className="panel" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
                 <div>
@@ -521,6 +528,18 @@ export function StudentAppointmentsPage() {
               )}
             </div>
           )}
+
+          <Pagination
+            currentPage={listPage}
+            totalPages={totalListPages}
+            totalItems={displayItems.length}
+            pageSize={listPageSize}
+            onPageChange={(p) => setListPage(p)}
+            onPageSizeChange={(s) => {
+              setListPageSize(s);
+              setListPage(1);
+            }}
+          />
         </div>
       ) : null}
 

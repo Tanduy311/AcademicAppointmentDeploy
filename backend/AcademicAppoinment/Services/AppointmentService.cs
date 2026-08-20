@@ -1,4 +1,5 @@
 using AcademicAppoinment.DTOs.Appointments;
+using AcademicAppoinment.DTOs.Common;
 using AcademicAppoinment.Helpers.Exceptions;
 using AcademicAppoinment.Models;
 using AcademicAppoinment.Repositories;
@@ -156,6 +157,57 @@ namespace AcademicAppoinment.Services
             return appointments.Select(ToAppointmentResponseDto).ToList();
         }
 
+        public async Task<PagedResultDto<AppointmentResponseDto>> GetMyAppointmentsPagedAsync(AppointmentFilterDto filter, ClaimsPrincipal user)
+        {
+            var student = await GetCurrentStudentAsync(user);
+            if (student == null)
+            {
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin sinh viên.");
+            }
+
+            var query = _context.Appointments
+                .Include(a => a.Student)
+                    .ThenInclude(s => s!.User)
+                .Include(a => a.Lecturer)
+                    .ThenInclude(l => l!.User)
+                .Include(a => a.AvailabilitySlot)
+                .Where(a => a.StudentId == student.StudentId);
+
+            if (!string.IsNullOrWhiteSpace(filter.Status))
+            {
+                var norm = NormalizeAppointmentStatus(filter.Status);
+                query = query.Where(a => a.Status == norm);
+            }
+            else if (string.Equals(filter.Tab, "active", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(a => a.Status == "Pending" || a.Status == "Confirmed");
+            }
+            else if (string.Equals(filter.Tab, "history", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(a => a.Status == "Completed" || a.Status == "No-Show" || a.Status == "Cancelled" || a.Status == "Rejected");
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.Search))
+            {
+                var term = filter.Search.Trim().ToLower();
+                query = query.Where(a => a.Topic.ToLower().Contains(term) ||
+                                         (a.Lecturer != null && a.Lecturer.User != null && a.Lecturer.User.FullName.ToLower().Contains(term)));
+            }
+
+            var totalItems = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .ToListAsync();
+
+            return new PagedResultDto<AppointmentResponseDto>(
+                items.Select(ToAppointmentResponseDto).ToList(),
+                totalItems,
+                filter.PageNumber,
+                filter.PageSize);
+        }
+
         public async Task<IReadOnlyList<AppointmentResponseDto>> GetLecturerAppointmentsAsync(ClaimsPrincipal user)
         {
             var lecturer = await GetCurrentLecturerAsync(user);
@@ -166,6 +218,58 @@ namespace AcademicAppoinment.Services
 
             var appointments = await _repository.GetAppointmentsByLecturerIdAsync(lecturer.LecturerId);
             return appointments.Select(ToAppointmentResponseDto).ToList();
+        }
+
+        public async Task<PagedResultDto<AppointmentResponseDto>> GetLecturerAppointmentsPagedAsync(AppointmentFilterDto filter, ClaimsPrincipal user)
+        {
+            var lecturer = await GetCurrentLecturerAsync(user);
+            if (lecturer == null)
+            {
+                throw new UnauthorizedAccessException("Không tìm thấy thông tin giảng viên.");
+            }
+
+            var query = _context.Appointments
+                .Include(a => a.Student)
+                    .ThenInclude(s => s!.User)
+                .Include(a => a.Lecturer)
+                    .ThenInclude(l => l!.User)
+                .Include(a => a.AvailabilitySlot)
+                .Where(a => a.LecturerId == lecturer.LecturerId);
+
+            if (!string.IsNullOrWhiteSpace(filter.Status))
+            {
+                var norm = NormalizeAppointmentStatus(filter.Status);
+                query = query.Where(a => a.Status == norm);
+            }
+            else if (string.Equals(filter.Tab, "active", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(a => a.Status == "Pending" || a.Status == "Confirmed");
+            }
+            else if (string.Equals(filter.Tab, "history", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(a => a.Status == "Completed" || a.Status == "No-Show" || a.Status == "Cancelled" || a.Status == "Rejected");
+            }
+
+            if (!string.IsNullOrWhiteSpace(filter.Search))
+            {
+                var term = filter.Search.Trim().ToLower();
+                query = query.Where(a => a.Topic.ToLower().Contains(term) ||
+                                         (a.Student != null && a.Student.User != null && a.Student.User.FullName.ToLower().Contains(term)) ||
+                                         (a.Student != null && a.Student.StudentCode.ToLower().Contains(term)));
+            }
+
+            var totalItems = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip((filter.PageNumber - 1) * filter.PageSize)
+                .Take(filter.PageSize)
+                .ToListAsync();
+
+            return new PagedResultDto<AppointmentResponseDto>(
+                items.Select(ToAppointmentResponseDto).ToList(),
+                totalItems,
+                filter.PageNumber,
+                filter.PageSize);
         }
 
         public async Task<AppointmentResponseDto> UpdateAppointmentStatusAsync(int id, UpdateAppointmentStatusDto dto, ClaimsPrincipal user)

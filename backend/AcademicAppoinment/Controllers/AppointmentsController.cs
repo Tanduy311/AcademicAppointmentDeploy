@@ -34,7 +34,15 @@ namespace AcademicAppoinment.Controllers
 
         [HttpGet("my-appointments")]
         [Authorize(Roles = "Student")]
-        public async Task<IActionResult> GetMyAppointments()
+        public async Task<IActionResult> GetMyAppointments([FromQuery] AppointmentFilterDto filter)
+        {
+            var result = await _appointmentService.GetMyAppointmentsPagedAsync(filter, User);
+            return Ok(result);
+        }
+
+        [HttpGet("my-appointments/all")]
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> GetAllMyAppointments()
         {
             var result = await _appointmentService.GetMyAppointmentsAsync(User);
             return Ok(result);
@@ -42,7 +50,15 @@ namespace AcademicAppoinment.Controllers
 
         [HttpGet("lecturer-appointments")]
         [Authorize(Roles = "Lecturer")]
-        public async Task<IActionResult> GetLecturerAppointments()
+        public async Task<IActionResult> GetLecturerAppointments([FromQuery] AppointmentFilterDto filter)
+        {
+            var result = await _appointmentService.GetLecturerAppointmentsPagedAsync(filter, User);
+            return Ok(result);
+        }
+
+        [HttpGet("lecturer-appointments/all")]
+        [Authorize(Roles = "Lecturer")]
+        public async Task<IActionResult> GetAllLecturerAppointments()
         {
             var result = await _appointmentService.GetLecturerAppointmentsAsync(User);
             return Ok(result);
