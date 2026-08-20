@@ -108,14 +108,10 @@ export function NotificationsPage() {
       <div style={{ display: 'flex', gap: 8, borderBottom: '1px solid var(--border-subtle)', paddingBottom: 8 }}>
         <button
           type="button"
-          className="btn"
+          className={`btn ${filterType === 'all' ? 'btn-primary' : 'btn-secondary'}`}
           style={{
             borderRadius: 'var(--radius-md)',
             padding: '8px 16px',
-            background: filterType === 'all' ? 'var(--primary)' : 'var(--bg-surface)',
-            color: filterType === 'all' ? '#FFFFFF' : 'var(--text-primary)',
-            fontWeight: filterType === 'all' ? 600 : 400,
-            border: '1px solid var(--border-subtle)',
           }}
           onClick={() => handleFilterChange('all')}
         >
@@ -123,14 +119,10 @@ export function NotificationsPage() {
         </button>
         <button
           type="button"
-          className="btn"
+          className={`btn ${filterType === 'unread' ? 'btn-primary' : 'btn-secondary'}`}
           style={{
             borderRadius: 'var(--radius-md)',
             padding: '8px 16px',
-            background: filterType === 'unread' ? 'var(--primary)' : 'var(--bg-surface)',
-            color: filterType === 'unread' ? '#FFFFFF' : 'var(--text-primary)',
-            fontWeight: filterType === 'unread' ? 600 : 400,
-            border: '1px solid var(--border-subtle)',
           }}
           onClick={() => handleFilterChange('unread')}
         >
@@ -138,14 +130,10 @@ export function NotificationsPage() {
         </button>
         <button
           type="button"
-          className="btn"
+          className={`btn ${filterType === 'read' ? 'btn-primary' : 'btn-secondary'}`}
           style={{
             borderRadius: 'var(--radius-md)',
             padding: '8px 16px',
-            background: filterType === 'read' ? 'var(--primary)' : 'var(--bg-surface)',
-            color: filterType === 'read' ? '#FFFFFF' : 'var(--text-primary)',
-            fontWeight: filterType === 'read' ? 600 : 400,
-            border: '1px solid var(--border-subtle)',
           }}
           onClick={() => handleFilterChange('read')}
         >
@@ -215,6 +203,7 @@ export function NotificationsPage() {
             totalPages={totalPages}
             totalItems={totalItems}
             pageSize={pageSize}
+            itemName="thông báo"
             onPageChange={(p) => setCurrentPage(p)}
             onPageSizeChange={(s) => {
               setPageSize(s);

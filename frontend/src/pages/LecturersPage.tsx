@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import type { LecturerListItemDto } from '../types/api';
@@ -9,9 +9,8 @@ import {
   IconTarget,
   IconMapPin,
   IconClock,
-  IconArrowRight,
 } from '../components/Icons';
-
+import { Pagination } from '../components/Pagination';
 import { cleanStringValue, formatDisplayValue } from '../utils/format';
 
 export function LecturersPage() {
@@ -21,6 +20,10 @@ export function LecturersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDept, setSelectedDept] = useState('ALL');
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
+
   useEffect(() => {
     api
       .lecturers()
@@ -29,20 +32,41 @@ export function LecturersPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const departments = ['ALL', ...Array.from(new Set(items.map((i) => cleanStringValue(i.department)).filter(Boolean)))];
+  const departments = useMemo(
+    () => ['ALL', ...Array.from(new Set(items.map((i) => cleanStringValue(i.department)).filter(Boolean)))],
+    [items]
+  );
 
-  const filteredItems = items.filter((item) => {
-    const cleanSpec = cleanStringValue(item.specialization);
-    const cleanDept = cleanStringValue(item.department);
-    const matchesSearch =
-      item.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.lecturerCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cleanSpec.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredItems = useMemo(() => {
+    return items.filter((item) => {
+      const cleanSpec = cleanStringValue(item.specialization);
+      const cleanDept = cleanStringValue(item.department);
+      const matchesSearch =
+        item.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.lecturerCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        cleanSpec.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesDept = selectedDept === 'ALL' || cleanDept === selectedDept;
+      const matchesDept = selectedDept === 'ALL' || cleanDept === selectedDept;
 
-    return matchesSearch && matchesDept;
-  });
+      return matchesSearch && matchesDept;
+    });
+  }, [items, searchQuery, selectedDept]);
+
+  const totalPages = Math.ceil(filteredItems.length / pageSize) || 1;
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, currentPage, pageSize]);
+
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setCurrentPage(1);
+  };
+
+  const handleDeptChange = (val: string) => {
+    setSelectedDept(val);
+    setCurrentPage(1);
+  };
 
   if (loading) {
     return (
@@ -60,15 +84,23 @@ export function LecturersPage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Header Banner & Search Filters */}
       <div className="panel">
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <IconTeacher size={24} style={{ color: 'var(--accent)' }} />
-          <span>Danh sách giảng viên tư vấn</span>
-        </h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: 20 }}>
-          Tìm kiếm giảng viên theo tên, khoa hoặc chuyên ngành để đăng ký lịch tư vấn học thuật.
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+          <div>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <IconTeacher size={24} style={{ color: 'var(--accent)' }} />
+              <span>Danh sách giảng viên tư vấn</span>
+            </h1>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              Tìm kiếm giảng viên theo tên, khoa hoặc chuyên ngành để đăng ký lịch tư vấn học thuật.
+            </p>
+          </div>
 
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className="badge badge-neutral">Tổng cộng: {filteredItems.length} giảng viên</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 16 }}>
           <div className="field" style={{ flex: 1, minWidth: 260 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <IconSearch size={15} />
@@ -77,7 +109,7 @@ export function LecturersPage() {
             <input
               placeholder="Nhập tên, mã giảng viên hoặc chuyên ngành..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
           </div>
 
@@ -86,7 +118,7 @@ export function LecturersPage() {
               <IconBuilding size={15} />
               <span>Lọc theo khoa</span>
             </span>
-            <select value={selectedDept} onChange={(e) => setSelectedDept(e.target.value)}>
+            <select value={selectedDept} onChange={(e) => handleDeptChange(e.target.value)}>
               {departments.map((dept) => (
                 <option key={dept} value={dept}>
                   {dept === 'ALL' ? 'Tất cả các khoa' : dept}
@@ -99,7 +131,7 @@ export function LecturersPage() {
 
       {/* Lecturer Cards Grid */}
       <div className="grid-2">
-        {filteredItems.map((item) => (
+        {paginatedItems.map((item) => (
           <Link
             key={item.lecturerId}
             to={`/app/lecturers/${item.lecturerId}`}
@@ -157,6 +189,21 @@ export function LecturersPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination Component */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredItems.length}
+        pageSize={pageSize}
+        pageSizeOptions={[6, 12, 24, 48]}
+        itemName="giảng viên"
+        onPageChange={(p) => setCurrentPage(p)}
+        onPageSizeChange={(s) => {
+          setPageSize(s);
+          setCurrentPage(1);
+        }}
+      />
     </div>
   );
 }

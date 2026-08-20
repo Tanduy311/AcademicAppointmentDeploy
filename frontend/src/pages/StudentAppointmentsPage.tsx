@@ -534,6 +534,7 @@ export function StudentAppointmentsPage() {
             totalPages={totalListPages}
             totalItems={displayItems.length}
             pageSize={listPageSize}
+            itemName="lịch hẹn"
             onPageChange={(p) => setListPage(p)}
             onPageSizeChange={(s) => {
               setListPageSize(s);

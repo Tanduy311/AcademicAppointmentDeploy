@@ -231,6 +231,7 @@ export function AdminAppointmentsPage() {
           totalPages={totalPages}
           totalItems={filteredAppointments.length}
           pageSize={pageSize}
+          itemName="cuộc hẹn"
           onPageChange={(p) => setCurrentPage(p)}
           onPageSizeChange={(s) => {
             setPageSize(s);

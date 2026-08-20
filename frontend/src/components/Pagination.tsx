@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { IconChevronLeft, IconChevronRight } from './Icons';
 
 export interface PaginationProps {
@@ -9,6 +9,7 @@ export interface PaginationProps {
   onPageChange: (page: number) => void;
   onPageSizeChange?: (pageSize: number) => void;
   pageSizeOptions?: number[];
+  itemName?: string;
   disabled?: boolean;
 }
 
@@ -19,9 +20,12 @@ export const Pagination: React.FC<PaginationProps> = ({
   pageSize,
   onPageChange,
   onPageSizeChange,
-  pageSizeOptions = [10, 20, 50],
+  pageSizeOptions = [6, 10, 20, 50],
+  itemName = 'kết quả',
   disabled = false,
 }) => {
+  const [jumpPageInput, setJumpPageInput] = useState('');
+
   if (totalItems <= 0) return null;
 
   const startItem = (currentPage - 1) * pageSize + 1;
@@ -52,47 +56,38 @@ export const Pagination: React.FC<PaginationProps> = ({
     return pages;
   };
 
+  const handleJumpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const pageNum = parseInt(jumpPageInput.trim(), 10);
+    if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= totalPages) {
+      onPageChange(pageNum);
+      setJumpPageInput('');
+    } else {
+      alert(`Vui lòng nhập số trang hợp lệ từ 1 đến ${totalPages}`);
+    }
+  };
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: 16,
-        padding: '16px 8px',
-        marginTop: 16,
-        borderTop: '1px solid var(--border-subtle)',
-      }}
-    >
-      {/* Thông tin số lượng bản ghi */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 13, color: 'var(--text-muted)' }}>
+    <div className="pagination-container">
+      {/* Thông tin số lượng bản ghi & chọn pageSize */}
+      <div className="pagination-info">
         <span>
-          Hiển thị <strong style={{ color: 'var(--text-primary)' }}>{startItem}</strong> -{' '}
-          <strong style={{ color: 'var(--text-primary)' }}>{endItem}</strong> trên tổng số{' '}
-          <strong style={{ color: 'var(--text-primary)' }}>{totalItems}</strong> kết quả
+          Hiển thị <strong>{startItem}</strong> - <strong>{endItem}</strong> trên tổng số{' '}
+          <strong>{totalItems}</strong> {itemName}
         </span>
 
         {onPageSizeChange && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 6 }}>
             <span>Số dòng:</span>
             <select
+              className="pagination-size-select custom-select"
               value={pageSize}
               disabled={disabled}
-              onChange={(e) => onPageSizeChange(Number(e.target.value))}
-              style={{
-                padding: '4px 8px',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-subtle)',
-                background: 'var(--bg-surface)',
-                color: 'var(--text-primary)',
-                fontSize: 13,
-                cursor: 'pointer',
-              }}
+              onChange={(e) => onPageSizeChange && onPageSizeChange(Number(e.target.value))}
             >
               {pageSizeOptions.map((opt) => (
                 <option key={opt} value={opt}>
-                  {opt}
+                  {opt} / trang
                 </option>
               ))}
             </select>
@@ -100,99 +95,87 @@ export const Pagination: React.FC<PaginationProps> = ({
         )}
       </div>
 
-      {/* Các nút bấm chuyển trang */}
-      {totalPages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {/* Nút Trước */}
-          <button
-            type="button"
-            className="btn"
-            disabled={currentPage <= 1 || disabled}
-            onClick={() => onPageChange(currentPage - 1)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-subtle)',
-              background: 'var(--bg-surface)',
-              color: currentPage <= 1 ? 'var(--text-disabled)' : 'var(--text-primary)',
-              fontSize: 13,
-              cursor: currentPage <= 1 || disabled ? 'not-allowed' : 'pointer',
-              opacity: currentPage <= 1 ? 0.5 : 1,
-            }}
-          >
-            <IconChevronLeft size={16} style={{ marginRight: 4 }} />
-            Trước
-          </button>
+      {/* Điều khiển phân trang & Nhảy trang */}
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
+        {totalPages > 1 && (
+          <div className="pagination-controls">
+            {/* Nút Trước */}
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={currentPage <= 1 || disabled}
+              onClick={() => onPageChange(currentPage - 1)}
+              title="Trang trước"
+            >
+              <IconChevronLeft size={16} style={{ marginRight: 2 }} />
+              <span>Trước</span>
+            </button>
 
-          {/* Danh sách trang */}
-          {getPageNumbers().map((page, index) => {
-            if (page === '...') {
+            {/* Danh sách trang */}
+            {getPageNumbers().map((page, index) => {
+              if (page === '...') {
+                return (
+                  <span key={`ellipsis-${index}`} className="pagination-ellipsis">
+                    ...
+                  </span>
+                );
+              }
+
+              const pageNum = Number(page);
+              const isActive = pageNum === currentPage;
+
               return (
-                <span
-                  key={`ellipsis-${index}`}
-                  style={{ padding: '4px 8px', color: 'var(--text-muted)', fontSize: 13 }}
+                <button
+                  key={pageNum}
+                  type="button"
+                  className={`pagination-btn ${isActive ? 'active' : ''}`}
+                  disabled={disabled}
+                  onClick={() => onPageChange(pageNum)}
+                  title={`Trang ${pageNum}`}
                 >
-                  ...
-                </span>
+                  {pageNum}
+                </button>
               );
-            }
+            })}
 
-            const pageNum = Number(page);
-            const isActive = pageNum === currentPage;
+            {/* Nút Sau */}
+            <button
+              type="button"
+              className="pagination-btn"
+              disabled={currentPage >= totalPages || disabled}
+              onClick={() => onPageChange(currentPage + 1)}
+              title="Trang sau"
+            >
+              <span>Sau</span>
+              <IconChevronRight size={16} style={{ marginLeft: 2 }} />
+            </button>
+          </div>
+        )}
 
-            return (
-              <button
-                key={pageNum}
-                type="button"
-                className="btn"
-                disabled={disabled}
-                onClick={() => onPageChange(pageNum)}
-                style={{
-                  minWidth: 34,
-                  height: 34,
-                  padding: '0 8px',
-                  borderRadius: 'var(--radius-md)',
-                  border: isActive ? '1px solid var(--primary)' : '1px solid var(--border-subtle)',
-                  background: isActive ? 'var(--primary)' : 'var(--bg-surface)',
-                  color: isActive ? '#FFFFFF' : 'var(--text-primary)',
-                  fontWeight: isActive ? 600 : 400,
-                  fontSize: 13,
-                  cursor: disabled ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {pageNum}
-              </button>
-            );
-          })}
-
-          {/* Nút Sau */}
-          <button
-            type="button"
-            className="btn"
-            disabled={currentPage >= totalPages || disabled}
-            onClick={() => onPageChange(currentPage + 1)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px 12px',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-subtle)',
-              background: 'var(--bg-surface)',
-              color: currentPage >= totalPages ? 'var(--text-disabled)' : 'var(--text-primary)',
-              fontSize: 13,
-              cursor: currentPage >= totalPages || disabled ? 'not-allowed' : 'pointer',
-              opacity: currentPage >= totalPages ? 0.5 : 1,
-            }}
-          >
-            Sau
-            <IconChevronRight size={16} style={{ marginLeft: 4 }} />
-          </button>
-        </div>
-      )}
+        {/* Nút nhảy đến số trang mong muốn */}
+        {totalPages > 1 && (
+          <form onSubmit={handleJumpSubmit} className="pagination-jump">
+            <span>Đến trang:</span>
+            <input
+              type="number"
+              min={1}
+              max={totalPages}
+              placeholder={String(currentPage)}
+              value={jumpPageInput}
+              onChange={(e) => setJumpPageInput(e.target.value)}
+              disabled={disabled}
+              className="pagination-jump-input"
+            />
+            <button
+              type="submit"
+              disabled={disabled || !jumpPageInput.trim()}
+              className="pagination-jump-btn"
+            >
+              Nhảy
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 };
