@@ -80,6 +80,8 @@ export function AdminUsersPage() {
     }
   };
 
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'PENDING'>('ALL');
+
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
       u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -88,7 +90,12 @@ export function AdminUsersPage() {
 
     const matchesRole = selectedRoleFilter === 'ALL' || getUserRoleNames(u).includes(selectedRoleFilter);
 
-    return matchesSearch && matchesRole;
+    const matchesStatus =
+      statusFilter === 'ALL' ||
+      (statusFilter === 'ACTIVE' && u.isActive) ||
+      (statusFilter === 'PENDING' && !u.isActive);
+
+    return matchesSearch && matchesRole && matchesStatus;
   });
 
   function getUserRoleNames(user: AdminUserListItemDto) {
@@ -158,6 +165,18 @@ export function AdminUsersPage() {
               <option value="Admin">Quản trị viên (Admin)</option>
             </select>
           </div>
+
+          <div className="field" style={{ width: 220 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <IconCheck size={15} />
+              <span>Trạng thái duyệt</span>
+            </span>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as 'ALL' | 'ACTIVE' | 'PENDING')}>
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="PENDING">Chờ Admin duyệt / Đã khóa</option>
+              <option value="ACTIVE">Đã kích hoạt</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -190,9 +209,13 @@ export function AdminUsersPage() {
                         {roleName}
                       </span>
                     ))}
-                    {!user.isActive && (
-                      <span className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>
-                        Đã bị khóa
+                    {!user.isActive ? (
+                      <span className="badge badge-warning" style={{ fontSize: '0.75rem', background: '#FEF3C7', color: '#92400E', border: '1px solid #FCD34D' }}>
+                        Chờ duyệt / Chưa kích hoạt
+                      </span>
+                    ) : (
+                      <span className="badge badge-success" style={{ fontSize: '0.75rem' }}>
+                        Đang hoạt động
                       </span>
                     )}
                   </div>
@@ -253,7 +276,7 @@ export function AdminUsersPage() {
               </div>
 
               <button
-                className="btn btn-secondary"
+                className={user.isActive ? "btn btn-secondary" : "btn btn-primary"}
                 type="button"
                 style={{ fontSize: '0.82rem', padding: '6px 14px', display: 'inline-flex', alignItems: 'center', gap: 6 }}
                 onClick={() => toggleActive(user.userId, user.isActive)}
@@ -267,7 +290,7 @@ export function AdminUsersPage() {
                 ) : (
                   <>
                     <IconCheck size={15} />
-                    <span>Mở khóa tài khoản</span>
+                    <span>Duyệt & Kích hoạt</span>
                   </>
                 )}
               </button>

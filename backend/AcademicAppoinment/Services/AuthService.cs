@@ -51,7 +51,7 @@ namespace AcademicAppoinment.Services
                 FullName = dto.FullName,
                 EmailAddress = dto.EmailAddress,
                 PhoneNumber = dto.PhoneNumber,
-                IsActive = true,
+                IsActive = false, // Chờ Admin phê duyệt kích hoạt
                 CreatedAt = DateTime.Now
             };
 
@@ -81,11 +81,9 @@ namespace AcademicAppoinment.Services
                 await transaction.CommitAsync();
             }
 
-            var token = _jwtTokenHelper.GenerateToken(user, ["Student"], studentId: student.StudentId);
-
             return new AuthResponseDto
             {
-                Token = token,
+                Token = string.Empty, // Chưa kích hoạt thì chưa cấp token
                 UserId = user.UserId,
                 AccountName = user.AccountName,
                 FullName = user.FullName,
@@ -120,7 +118,7 @@ namespace AcademicAppoinment.Services
                 FullName = dto.FullName,
                 EmailAddress = dto.EmailAddress,
                 PhoneNumber = dto.PhoneNumber,
-                IsActive = true,
+                IsActive = false, // Chờ Admin phê duyệt kích hoạt
                 CreatedAt = DateTime.Now
             };
 
@@ -151,11 +149,9 @@ namespace AcademicAppoinment.Services
                 await transaction.CommitAsync();
             }
 
-            var token = _jwtTokenHelper.GenerateToken(user, ["Lecturer"], lecturerId: lecturer.LecturerId);
-
             return new AuthResponseDto
             {
-                Token = token,
+                Token = string.Empty, // Chưa kích hoạt thì chưa cấp token
                 UserId = user.UserId,
                 AccountName = user.AccountName,
                 FullName = user.FullName,
@@ -176,7 +172,7 @@ namespace AcademicAppoinment.Services
 
             if (!user.IsActive)
             {
-                throw new UnauthorizedAccessException("Tài khoản của bạn đã bị khóa.");
+                throw new UnauthorizedAccessException("Tài khoản của bạn đang chờ Ban quản trị phê duyệt kích hoạt hoặc đã bị tạm khóa. Vui lòng liên hệ giáo vụ để được hỗ trợ.");
             }
 
             var roleName = RoleNameResolver.ResolvePrimaryRole(user);

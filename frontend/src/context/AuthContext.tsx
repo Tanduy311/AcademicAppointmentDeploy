@@ -86,15 +86,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       registerStudent: async (dto) => {
         const result = await api.registerStudent(dto);
-        saveAuth(result);
-        setToken(result.token);
-        await refreshMe();
+        if (result.token) {
+          saveAuth(result);
+          setToken(result.token);
+          await refreshMe();
+        }
       },
       registerLecturer: async (dto) => {
         const result = await api.registerLecturer(dto);
-        saveAuth(result);
-        setToken(result.token);
-        await refreshMe();
+        if (result.token) {
+          saveAuth(result);
+          setToken(result.token);
+          await refreshMe();
+        }
       },
       logout: () => {
         localStorage.removeItem(TOKEN_KEY);

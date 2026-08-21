@@ -19,6 +19,7 @@ export function RegisterLecturerPage() {
   const { registerLecturer } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -54,13 +55,32 @@ export function RegisterLecturerPage() {
     setBusy(true);
     try {
       await registerLecturer(form);
-      navigate('/app');
+      setSuccessMessage('Đăng ký tài khoản giảng viên thành công! Tài khoản của bạn đang ở trạng thái chờ Ban quản trị xét duyệt và kích hoạt.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Đăng ký tài khoản không thành công.');
     } finally {
       setBusy(false);
     }
   };
+
+  if (successMessage) {
+    return (
+      <div className="auth-page">
+        <div className="auth-card" style={{ textAlign: 'center', padding: '36px 28px' }}>
+          <div style={{ fontSize: '3rem', marginBottom: 16 }}>⏳</div>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 12 }}>
+            Đăng ký thành công!
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: 1.6, marginBottom: 24 }}>
+            {successMessage}
+          </p>
+          <button className="btn btn-primary" onClick={() => navigate('/login')} style={{ width: '100%', justifyContent: 'center' }}>
+            <span>Đến trang đăng nhập</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="auth-page">
