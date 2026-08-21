@@ -458,24 +458,6 @@ export function StudentAppointmentsPage() {
                 </div>
               ) : null}
 
-              {item.attachmentUrl ? (
-                <div style={{ background: '#f8fafc', padding: 10, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <IconFileText size={16} style={{ color: 'var(--accent)' }} />
-                    <span><strong>Tài liệu đính kèm:</strong> {item.attachmentName || 'Tệp đính kèm'}</span>
-                  </div>
-                  <a
-                    href={item.attachmentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.75rem', padding: '3px 8px' }}
-                  >
-                    Tải / Xem file
-                  </a>
-                </div>
-              ) : null}
-
               {item.lecturerResponse ? (
                 <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: 10, borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: '#1d4ed8' }}>
                   <strong>Lời nhắn từ giảng viên:</strong> {item.lecturerResponse}
@@ -623,25 +605,6 @@ export function StudentAppointmentsPage() {
                     <span>Ghi chú yêu cầu của sinh viên</span>
                   </div>
                   <div style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>{activeModal.item.description}</div>
-                </div>
-              )}
-
-              {/* Attachment */}
-              {activeModal.item.attachmentUrl && (
-                <div style={{ background: '#f8fafc', padding: 12, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.88rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <IconFileText size={16} style={{ color: 'var(--accent)' }} />
-                    <span style={{ fontWeight: 600 }}>Tài liệu đính kèm: {activeModal.item.attachmentName || 'Tài liệu'}</span>
-                  </div>
-                  <a
-                    href={activeModal.item.attachmentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.78rem', padding: '4px 10px' }}
-                  >
-                    Xem / Tải file
-                  </a>
                 </div>
               )}
 

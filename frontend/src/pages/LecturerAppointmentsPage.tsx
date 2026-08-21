@@ -461,24 +461,6 @@ export function LecturerAppointmentsPage() {
                     </div>
                   ) : null}
 
-                  {item.attachmentUrl ? (
-                    <div style={{ background: '#f8fafc', padding: 10, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <IconFileText size={16} style={{ color: 'var(--accent)' }} />
-                        <span><strong>Tài liệu đính kèm:</strong> {item.attachmentName || 'Tệp đính kèm'}</span>
-                      </div>
-                      <a
-                        href={item.attachmentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-secondary"
-                        style={{ fontSize: '0.75rem', padding: '3px 8px' }}
-                      >
-                        Tải / Xem file
-                      </a>
-                    </div>
-                  ) : null}
-
                   {item.lecturerResponse ? (
                     <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: 12, borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: '#1d4ed8', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                       <IconChat size={16} style={{ marginTop: 2, flexShrink: 0 }} />

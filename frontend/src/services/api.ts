@@ -10,7 +10,6 @@ import type {
   CreateAppointmentDto,
   CreateSlotDto,
   CurrentUserResponseDto,
-  FileUploadResponseDto,
   LecturerDetailDto,
   LecturerListItemDto,
   LoginDto,
@@ -138,16 +137,6 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(dto),
     }),
-
-  uploadFile: (file: File, folder?: string) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    const query = folder ? `?folder=${encodeURIComponent(folder)}` : '';
-    return request<FileUploadResponseDto>(`/api/fileupload/upload${query}`, {
-      method: 'POST',
-      body: formData,
-    });
-  },
 
   users: () => request<AdminUserListItemDto[]>('/api/admin/users'),
   userById: (userId: number) => request<AdminUserDetailDto>(`/api/admin/users/${userId}`),

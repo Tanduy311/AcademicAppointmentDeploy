@@ -5,16 +5,11 @@ using System.Text.Json;
 
 namespace AcademicAppoinment.Services
 {
-    public class SupabaseStorageService : ISupabaseStorageService, IAvatarStorageService
+    public class SupabaseStorageService : IAvatarStorageService
     {
         private static readonly HashSet<string> AllowedAvatarExtensions = new(StringComparer.OrdinalIgnoreCase)
         {
             ".jpg", ".jpeg", ".png", ".webp"
-        };
-
-        private static readonly HashSet<string> AllowedAttachmentExtensions = new(StringComparer.OrdinalIgnoreCase)
-        {
-            ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".zip", ".rar", ".7z", ".png", ".jpg", ".jpeg", ".webp"
         };
 
         private static readonly HashSet<string> AllowedAvatarContentTypes = new(StringComparer.OrdinalIgnoreCase)
@@ -23,7 +18,6 @@ namespace AcademicAppoinment.Services
         };
 
         private const long MaxAvatarSizeBytes = 2 * 1024 * 1024;
-        private const long MaxUploadSizeBytes = 10 * 1024 * 1024;
 
         private readonly IConfiguration _configuration;
         private readonly IHttpClientFactory _httpClientFactory;
@@ -32,23 +26,6 @@ namespace AcademicAppoinment.Services
         {
             _configuration = configuration;
             _httpClientFactory = httpClientFactory;
-        }
-
-        public async Task<string> UploadFileAsync(IFormFile file, string? folder = null)
-        {
-            ValidateGenericFile(file);
-
-            var projectUrl = GetRequiredSetting("Supabase:ProjectUrl").TrimEnd('/');
-            var bucketName = GetBucketName();
-
-            var fileExtension = Path.GetExtension(file.FileName);
-            var safeFileName = $"{Guid.NewGuid()}{fileExtension}";
-            var filePath = CombineObjectPath(folder, safeFileName);
-            var uploadUrl = $"{projectUrl}/storage/v1/object/{Uri.EscapeDataString(bucketName)}/{EncodeObjectPath(filePath)}";
-
-            await UploadObjectAsync(file, uploadUrl, upsert: false);
-
-            return $"{projectUrl}/storage/v1/object/public/{Uri.EscapeDataString(bucketName)}/{EncodeObjectPath(filePath)}";
         }
 
         public async Task<AvatarUploadResult> UploadAvatarAsync(IFormFile file, CancellationToken cancellationToken = default)
@@ -111,25 +88,6 @@ namespace AcademicAppoinment.Services
             request.Headers.TryAddWithoutValidation("apikey", serviceKey);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", serviceKey);
             return request;
-        }
-
-        private static void ValidateGenericFile(IFormFile file)
-        {
-            if (file == null || file.Length <= 0)
-            {
-                throw new ArgumentException("File upload không hợp lệ.");
-            }
-
-            if (file.Length > MaxUploadSizeBytes)
-            {
-                throw new ArgumentException("File upload không được vượt quá 10MB.");
-            }
-
-            var ext = Path.GetExtension(file.FileName);
-            if (string.IsNullOrWhiteSpace(ext) || !AllowedAttachmentExtensions.Contains(ext))
-            {
-                throw new ArgumentException("Định dạng file không được hỗ trợ. Vui lòng chỉ upload tài liệu (PDF, Word, Excel, PowerPoint, Text, ZIP, RAR, Ảnh).");
-            }
         }
 
         private static void ValidateAvatarFile(IFormFile file)

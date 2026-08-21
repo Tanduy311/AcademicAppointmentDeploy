@@ -12,7 +12,5 @@ namespace AcademicAppoinment.DTOs.Appointments
         public string Topic { get; set; } = null!;
 
         public string? Description { get; set; }
-        public string? AttachmentUrl { get; set; }
-        public string? AttachmentName { get; set; }
     }
 }

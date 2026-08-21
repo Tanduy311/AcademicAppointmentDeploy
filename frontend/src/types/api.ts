@@ -95,8 +95,6 @@ export interface AppointmentResponseDto {
   locationOrLink?: string | null;
   topic: string;
   description?: string | null;
-  attachmentUrl?: string | null;
-  attachmentName?: string | null;
   status: string;
   lecturerResponse?: string | null;
   cancellationReason?: string | null;
@@ -204,8 +202,6 @@ export interface CreateAppointmentDto {
   availabilitySlotId: number;
   topic: string;
   description?: string;
-  attachmentUrl?: string | null;
-  attachmentName?: string | null;
 }
 
 export interface CancelAppointmentDto {
@@ -261,13 +257,6 @@ export interface UpdateLecturerProfileDto {
   specialization?: string;
   officeLocation?: string;
   consultationDescription?: string;
-}
-
-export interface FileUploadResponseDto {
-  fileName: string;
-  fileUrl: string;
-  fileSize: number;
-  contentType: string;
 }
 
 export interface PagedResult<T> {

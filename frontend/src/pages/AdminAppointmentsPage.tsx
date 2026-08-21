@@ -196,23 +196,9 @@ export function AdminAppointmentsPage() {
               <span><strong>Khoa/Bộ môn:</strong> {item.department || 'Chưa cập nhật'}</span>
             </div>
 
-            {(item.description || item.attachmentUrl || item.lecturerResponse || item.cancellationReason) && (
+            {(item.description || item.lecturerResponse || item.cancellationReason) && (
               <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 12, display: 'grid', gap: 8, fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
                 {item.description && <span><strong>Mô tả:</strong> {item.description}</span>}
-                {item.attachmentUrl && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span><strong>Tài liệu đính kèm:</strong> {item.attachmentName || 'Tệp đính kèm'}</span>
-                    <a
-                      href={item.attachmentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-secondary"
-                      style={{ fontSize: '0.72rem', padding: '2px 8px' }}
-                    >
-                      Xem file
-                    </a>
-                  </div>
-                )}
                 {item.lecturerResponse && <span><strong>Phản hồi giảng viên:</strong> {item.lecturerResponse}</span>}
                 {item.cancellationReason && <span><strong>Lý do hủy:</strong> {item.cancellationReason}</span>}
               </div>
